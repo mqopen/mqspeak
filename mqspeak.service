@@ -1,0 +1,11 @@
+[Unit]
+Description=MQTT to ThingSpeak bridge
+After=mosquitto.service
+
+[Service]
+Type=simple
+ExecStart=/bin/mqspeak
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
