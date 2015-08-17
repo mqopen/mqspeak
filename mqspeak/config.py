@@ -1,18 +1,20 @@
 import configparser
 from mqspeak.broker import Broker
+from mqspeak.channel import Channel
+from mqspeak.data import DataIdentifier
 
 class ProgramConfig:
 
     def __init__(self, configFile):
         self.configFile = configFile
         self.parser = configparser.ConfigParser()
-    
+
     def parse(self):
         self.parser.read(self.configFile)
         self._checkForMandatorySections()
         self.listenDescriptors = self.getListenDescriptors()
         self.channelUpdateDescriptors = self.getChannelUpdateDescriptors()
-    
+
     def getListenDescriptors(self):
         """
         Create list of listen descriptor objects - (broker, topicIterable)
@@ -25,7 +27,7 @@ class ProgramConfig:
             subscriptions = self._getBrokerSubscribtions(brokerSection)
             listenDescriptors.append((broker, subscriptions))
         return listenDescriptors
-    
+
     def getChannelUpdateDescriptors(self):
         """
         Create list of channel update descriptor objects
@@ -33,8 +35,33 @@ class ProgramConfig:
         channelSections = self.parser.get("Channels", "Enabled").split()
         self._checkForSectionList(channelSections)
         for channelSection in channelSections:
-            pass
-    
+            self._createChannel(channelSection)
+            self._createChannelMapping(channelSection)
+
+    def _createChannel(self, channelSection):
+        writeKey = self.parser.get(channelSection, "Key")
+        return Channel(channelSection, writeKey)
+
+    def _createChannelMapping(self, channelSection):
+        channelMapping = {}
+        for mappingOption in ["Field1", "Field2", "Field3", "Field4", "Field5", "Field6", "Field7", "Field8"]:
+            if self.parser.has_option(channelSection, mappingOption):
+                optionValue = self.parser.get(channelSection, mappingOption).split()
+                if len(optionValue) < 2:
+                    raise ConfigException("{0}: {1} - option must contain two space separated values".format(channelSection, mappingOption))
+                (brokerName, topic) = optionValue
+                broker = self._getBrokerByName(brokerName)
+                if broker is None:
+                    raise ConfigException("Broker section {0} is not defined or enabled".format(brokerName))
+                channelMapping[mappingOption.lower()] = DataIdentifier(broker, topic)
+        return channelMapping
+
+    def _getBrokerByName(self, brokerName):
+        for broker, subscriptions in self.listenDescriptors:
+            if brokerName == broker.name:
+                return broker
+        return None
+
     def _createBroker(self, brokerSection):
         self._checkForOptionList(brokerSection, ["Topic"])
         options = self.parser.options(brokerSection)
@@ -60,16 +87,18 @@ class ProgramConfig:
         return (user, password)
 
     def _getBrokerSubscribtions(self, brokerSection):
-        subscriptions = []
+        subscriptions = self.parser.get(brokerSection, "Topic").split()
+        if len(subscriptions) == 0:
+            raise ConfigException("At least one topic subscribe has to be defined")
         return subscriptions
-    
+
     def _checkForMandatorySections(self):
         self._checkForSectionList(["Brokers", "Channels"])
-    
+
     def _checkForSectionList(self, sectionList):
         for section in sectionList:
             self._checkForSection(section)
-    
+
     def _checkForSection(self, section):
         if not self.parser.has_section(section):
             raise ConfigException("{0} section is missing".format(section))
