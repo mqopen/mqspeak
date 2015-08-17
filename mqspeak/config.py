@@ -1,15 +1,26 @@
 import configparser
+import datetime
 from mqspeak.broker import Broker
 from mqspeak.channel import Channel
 from mqspeak.data import DataIdentifier
+from mqspeak.updating import BlackoutUpdater, BufferedUpdater, AverageUpdater, OnChangeUpdater
 
 class ProgramConfig:
+    """
+    Program configuration parser.
+    """
 
     def __init__(self, configFile):
+        """
+        configFile: path to configuration file
+        """
         self.configFile = configFile
         self.parser = configparser.ConfigParser()
 
     def parse(self):
+        """
+        Parse config file.
+        """
         self.parser.read(self.configFile)
         self._checkForMandatorySections()
         self.listenDescriptors = self.getListenDescriptors()
@@ -43,6 +54,9 @@ class ProgramConfig:
         return Channel(channelSection, writeKey)
 
     def _createChannelMapping(self, channelSection):
+        """
+        Returns {DataIdentifier: "field"} mapping
+        """
         channelMapping = {}
         for mappingOption in ["Field1", "Field2", "Field3", "Field4", "Field5", "Field6", "Field7", "Field8"]:
             if self.parser.has_option(channelSection, mappingOption):
@@ -53,8 +67,22 @@ class ProgramConfig:
                 broker = self._getBrokerByName(brokerName)
                 if broker is None:
                     raise ConfigException("Broker section {0} is not defined or enabled".format(brokerName))
-                channelMapping[mappingOption.lower()] = DataIdentifier(broker, topic)
+                channelMapping[DataIdentifier(broker, topic)] = mappingOption.lower()
         return channelMapping
+
+    def _createUpdaters(self, channelSection):
+        updateRate = datetime.timedelta(seconds = self.parser.getint(channelSection, "UpdateRate"))
+        updaterName = self.parser.get(channelSection, "UpdateType")
+        if updaterName == "blackout":
+            return BlackoutUpdater(updateRate)
+        elif updaterName == "buffered":
+            return BufferedUpdater(updateRate)
+        elif updaterName == "average":
+            return AverageUpdater(updateRate)
+        elif updaterName == "onchange":
+            return OnChangeUpdater()
+        else:
+            raise ConfigException("Unknown UpdateType: {0}".format(updaterName))
 
     def _getBrokerByName(self, brokerName):
         for broker, subscriptions in self.listenDescriptors:

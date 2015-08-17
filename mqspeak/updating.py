@@ -22,9 +22,11 @@ class BaseUpdater:
     Updater object base class
     """
 
-    def __init__(self, dispatcher):
-        self.dispatcher = dispatcher
+    def __init__(self):
         self.isUpdateRunning = False
+
+    def setDispatcher(self, dispatcher):
+        self.dispatcher = dispatcher
 
     def update(self, measurement):
         """
@@ -40,11 +42,11 @@ class BaseUpdater:
 
 class TimeBasedUpdater(BaseUpdater):
 
-    def __init__(self, dispatcher, updateInterval):
+    def __init__(self, updateInterval):
         """
         updateInterval: timedelta object
         """
-        BaseUpdater.__init__(self, dispatcher)
+        BaseUpdater.__init__(self)
         self.updateInterval = updateInterval
         self.lastUpdated = datetime.datetime.min
 
@@ -59,8 +61,8 @@ class TimeBasedUpdater(BaseUpdater):
 
 class BlackoutUpdater(TimeBasedUpdater):
 
-    def __init__(self, dispatcher, updateInterval):
-        TimeBasedUpdater.__init__(self, dispatcher, updateInterval)
+    def __init__(self, updateInterval):
+        TimeBasedUpdater.__init__(self, updateInterval)
 
     def dataAvailable(self, channelIdentifier, measurement):
         print("Data available: {0}".format(measurement))
@@ -77,8 +79,8 @@ class BufferedUpdater(TimeBasedUpdater):
     after time expires.
     """
 
-    def __init__(self, dispatcher, updateInterval):
-        TimeBasedUpdater.__init__(self, dispatcher, updateInterval)
+    def __init__(self, updateInterval):
+        TimeBasedUpdater.__init__(self, updateInterval)
         self.scheduler = sched.scheduler(time.time, time.sleep)
 
 class AverageUpdater(BufferedUpdater):
@@ -87,14 +89,14 @@ class AverageUpdater(BufferedUpdater):
     average value while sending them.
     """
 
-    def __init__(self, dispatcher, updateInterval):
-        BufferedUpdater.__init__(self, dispatcher, updateInterval)
+    def __init__(self, updateInterval):
+        BufferedUpdater.__init__(self, updateInterval)
 
 class OnChangeUpdater(BaseUpdater):
     """
     Send every value change.
     """
 
-    def __init__(self, dispatcher):
-        BaseUpdater.__init__(self, dispatcher)
+    def __init__(self):
+        BaseUpdater.__init__(self)
         self.changeBuffer = []

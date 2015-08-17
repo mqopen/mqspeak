@@ -17,11 +17,10 @@ class ChannelUpdateDispatcher:
         self.dispatchLock = threading.Semaphore(0)
         self.running = False
 
-    def dataAvailable(self, measurement):
+    def sendUpdate(self, channelIdentifier, measurement, resultNotify):
         """
         Notify main thread when new data is available
         """
-        #self.update.update(measurement)
 
     def sendJobDone(self, result):
         """
@@ -48,7 +47,7 @@ class ChannelUpdateDispatcher:
         self.running = False
         self.dispatchLock.release()
 
-    def dispatch(channel, measurement, updater):
+    def dispatch(self, channel, measurement, updater):
         """
         Dispatch new ThingSpeak update thread
 
