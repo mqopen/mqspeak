@@ -4,17 +4,21 @@ import time
 
 class ChannnelUpdateSupervisor:
     """
-    Manage channel updaters.
+    Manage channel updaters. Object is responsible to delivering channel update event to
+    correct Updater object.
     """
 
-    def __init__(self, updaters):
+    def __init__(self, channelUpdaterMapping):
         """
-        updaters: Updater object iterable
+        channelUpdaterMapping: mapping for {channel: updater}
         """
-        self.updaters = updaters
+        self.channelUpdaterMapping = channelUpdaterMapping
 
     def dataAvailable(self, channelIdentifier, measurement):
-        updater = self.updater[channelIdentifier]
+        """
+        Deliver new update to correct Updater object.
+        """
+        updater = self.channelUpdaterMapping[channelIdentifier]
         updater.update()
 
 class BaseUpdater:
@@ -65,10 +69,9 @@ class BlackoutUpdater(TimeBasedUpdater):
         TimeBasedUpdater.__init__(self, updateInterval)
 
     def dataAvailable(self, channelIdentifier, measurement):
-        print("Data available: {0}".format(measurement))
-        return
         if self.isUpdateIntervalExpired() or self.isUpdateRunning:
-            self.dispatcher.dispatch(channelIdentifier, measurement, self)
+            print("New data: {0} - {1}".format(channelIdentifier, measurement))
+            #self.dispatcher.dispatch(channelIdentifier, measurement, self)
 
     def notifyUpdateResult(self, result):
         self.updateDone()

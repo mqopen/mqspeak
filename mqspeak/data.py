@@ -23,14 +23,15 @@ class Measurement:
 
 class MeasurementParamConverter:
     """
-    Convert data measurement into ThingSpeak fields
+    Convert data measurement into ThingSpeak fields for single channel.
     """
 
-    def __init__(self, mapping):
+    def __init__(self, dataFieldsMapping):
         """
-        mapping: object for mapping DataIdentifier object to ThingSpeak channel field.
+        dataFieldsMapping: object for mapping DataIdentifier object to ThingSpeak channel field.
+            {DataIdentifier: "field"}
         """
-        self.mapping = mapping
+        self.dataFieldsMapping = dataFieldsMapping
 
     def convert(self, measurement):
         """
@@ -38,8 +39,14 @@ class MeasurementParamConverter:
         """
         params = dict()
         for topicName in measurement.fields:
-            params[self.mapping[topicName]] = measurement.fields[topicName]
+            params[self.dataFieldsMapping[topicName]] = measurement.fields[topicName]
         return params
+
+    def __str__(self):
+        return "<Param Converter: {0}>".format(str(self.dataFieldsMapping))
+
+    def __repr__(self):
+        return self.__str__()
 
 class DataIdentifier:
     """
@@ -55,6 +62,9 @@ class DataIdentifier:
 
     def __str__(self):
         return "<{0}: {1}>".format(self.broker, self.topic)
+
+    def __repr__(self):
+        return self.__str__()
 
 class ConvertException(Exception):
     """

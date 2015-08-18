@@ -23,40 +23,35 @@ class ProgramConfig:
         """
         self.parser.read(self.configFile)
         self._checkForMandatorySections()
-        self.listenDescriptors = self.getListenDescriptors()
-        self.channelUpdateDescriptors = self.getChannelUpdateDescriptors()
+        self.channels = self.getChannels()
+        self.brokers = self.getBrokers()
 
-    def getListenDescriptors(self):
+    def getBrokers(self):
         """
-        Create list of listen descriptor objects - (broker, topicIterable)
+        Get list of enabled brokers.
         """
         brokerSections = self.parser.get("Brokers", "Enabled").split()
         self._checkForSectionList(brokerSections)
-        listenDescriptors = []
+        brokers = []
         for brokerSection in brokerSections:
             broker = self._createBroker(brokerSection)
-            subscriptions = self._getBrokerSubscribtions(brokerSection)
-            listenDescriptors.append((broker, subscriptions))
-        return listenDescriptors
+            brokers.append(broker)
+        return brokers
 
-    def getChannelUpdateDescriptors(self):
+    def getChannels(self):
         """
-        Create list of channel update descriptor objects
+        Create list of enable channels.
         """
         channelSections = self.parser.get("Channels", "Enabled").split()
         self._checkForSectionList(channelSections)
+        channels = []
         for channelSection in channelSections:
-            self._createChannel(channelSection)
-            self._createChannelMapping(channelSection)
+            channel = self._createChannel(channelSection)
+            channels.append(channel)
+        return channels
 
-    def _createChannel(self, channelSection):
-        writeKey = self.parser.get(channelSection, "Key")
-        return Channel(channelSection, writeKey)
-
-    def _createChannelMapping(self, channelSection):
-        """
-        Returns {DataIdentifier: "field"} mapping
-        """
+    def getDataFieldMapping(self, channel):
+        channelSection = channel.name
         channelMapping = {}
         for mappingOption in ["Field1", "Field2", "Field3", "Field4", "Field5", "Field6", "Field7", "Field8"]:
             if self.parser.has_option(channelSection, mappingOption):
@@ -70,7 +65,15 @@ class ProgramConfig:
                 channelMapping[DataIdentifier(broker, topic)] = mappingOption.lower()
         return channelMapping
 
-    def _createUpdaters(self, channelSection):
+    def getBrokerSubscribtions(self, broker):
+        brokerSection = broker.name
+        subscriptions = self.parser.get(brokerSection, "Topic").split()
+        if len(subscriptions) == 0:
+            raise ConfigException("At least one topic subscribe has to be defined")
+        return subscriptions
+
+    def getChannelUpdater(self, channel):
+        channelSection = channel.name
         updateRate = datetime.timedelta(seconds = self.parser.getint(channelSection, "UpdateRate"))
         updaterName = self.parser.get(channelSection, "UpdateType")
         if updaterName == "blackout":
@@ -83,12 +86,6 @@ class ProgramConfig:
             return OnChangeUpdater()
         else:
             raise ConfigException("Unknown UpdateType: {0}".format(updaterName))
-
-    def _getBrokerByName(self, brokerName):
-        for broker, subscriptions in self.listenDescriptors:
-            if brokerName == broker.name:
-                return broker
-        return None
 
     def _createBroker(self, brokerSection):
         self._checkForOptionList(brokerSection, ["Topic"])
@@ -114,11 +111,15 @@ class ProgramConfig:
             raise ConfigException("Section {0}: Password option is missing")
         return (user, password)
 
-    def _getBrokerSubscribtions(self, brokerSection):
-        subscriptions = self.parser.get(brokerSection, "Topic").split()
-        if len(subscriptions) == 0:
-            raise ConfigException("At least one topic subscribe has to be defined")
-        return subscriptions
+    def _getBrokerByName(self, brokerName):
+        for broker in self.brokers:
+            if brokerName == broker.name:
+                return broker
+        return None
+
+    def _createChannel(self, channelSection):
+        writeKey = self.parser.get(channelSection, "Key")
+        return Channel(channelSection, writeKey)
 
     def _checkForMandatorySections(self):
         self._checkForSectionList(["Brokers", "Channels"])

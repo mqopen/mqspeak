@@ -17,7 +17,14 @@ class ChannelUpdateDispatcher:
         self.dispatchLock = threading.Semaphore(0)
         self.running = False
 
-    def sendUpdate(self, channelIdentifier, measurement, resultNotify):
+    @classmethod
+    def createThingSpeakUpdateDispatcher(cls, channelConvertMapping):
+        """
+        channelConvertMapping: mapping {channel: channelParamConverter}
+        """
+        return cls(channelConvertMapping)
+
+    def updateAvailable(self, channelIdentifier, measurement, resultNotify):
         """
         Notify main thread when new data is available
         """
@@ -63,7 +70,7 @@ class ThingSpeakSender:
 
     def __init__(self, channelConvertMapping):
         """
-        channelConvertMapping: mapping {channel: paramConverter}
+        channelConvertMapping: mapping {channel: channelParamConverter}
         """
         self.channelConvertMapping = channelConvertMapping
 

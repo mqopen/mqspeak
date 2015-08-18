@@ -44,7 +44,7 @@ class BrokerReceiver:
 
     def __init__(self,  listenDescriptor, dataCollector):
         """
-        listenDescriptor: set containing following fields: (broker, subscription, updateCollector)
+        listenDescriptor: set containing following fields: (broker, subscription)
             broker: broker descriptor object
             subscription:
         dataCollector: listener object to deliver received updates
@@ -76,7 +76,7 @@ class BrokerReceiver:
         """
         dataID = DataIdentifier(self.broker, msg.topic)
         print("received: {0} - {1}".format(dataID, msg.payload.decode("utf-8")))
-        self.dataCollector.onNewData(dataID, msg.payload.decode("utf-8"))
+        #self.dataCollector.onNewData(dataID, msg.payload.decode("utf-8"))
 
     def stop(self):
         self.client.disconnect()
