@@ -13,6 +13,7 @@ def main():
     updateDispatcher = ChannelUpdateDispatcher.createThingSpeakUpdateDispatcher(channelConvertMapping)
 
     channelUpdateSupervisor = ChannnelUpdateSupervisor(system.getChannelUpdateMapping())
+    channelUpdateSupervisor.setDispatcher(updateDispatcher)
     dataCollector = DataCollector(system.getUpdateBuffers(), channelUpdateSupervisor)
 
     # MQTT cliens

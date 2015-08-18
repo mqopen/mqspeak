@@ -1,6 +1,7 @@
 import sched
 import datetime
 import time
+import threading
 
 class ChannnelUpdateSupervisor:
     """
@@ -21,6 +22,10 @@ class ChannnelUpdateSupervisor:
         updater = self.channelUpdaterMapping[channel]
         updater.dataAvailable(measurement)
 
+    def setDispatcher(self, dispatcher):
+        for updater in self.channelUpdaterMapping.values():
+            updater.setDispatcher(dispatcher)
+
 class BaseUpdater:
     """
     Updater object base class
@@ -32,6 +37,7 @@ class BaseUpdater:
         """
         self.channel = channel
         self.isUpdateRunning = False
+        self.updateLock = threading.Semaphore(1)
 
     def setDispatcher(self, dispatcher):
         self.dispatcher = dispatcher
@@ -40,12 +46,30 @@ class BaseUpdater:
         """
         Update new data.
         """
+        self.updateLock.acquire()
+        self.handleAvailableData(measurement)
+        self.updateLock.release()
+
+    def handleAvailableData(self, measurement):
         raise NotImplementedError("Override this mehod in sub-class")
+
+    def runUpdate(self, measurement):
+        """
+        Call this method in sub-class from handleAvailableData method.
+        """
+        self.isUpdateRunning = True
+        self.dispatcher.updateAvailable(self.channel, measurement, self)
 
     def notifyUpdateResult(self, result):
         """
         Callback method with update result
         """
+        self.updateLock.acquire()
+        self.isUpdateRunning = False
+        self.resolveUpdateResult(result)
+        self.updateLock.release()
+
+    def resolveUpdateResult(self, result):
         raise NotImplementedError("Override this mehod in sub-class")
 
 class TimeBasedUpdater(BaseUpdater):
@@ -64,7 +88,7 @@ class TimeBasedUpdater(BaseUpdater):
         """
         return (datetime.datetime.now() - self.lastUpdated) > self.updateInterval
 
-    def updateDone(self):
+    def resolveUpdateResult(self, result):
         self.lastUpdated = datetime.datetime.now()
 
 class BlackoutUpdater(TimeBasedUpdater):
@@ -72,13 +96,13 @@ class BlackoutUpdater(TimeBasedUpdater):
     def __init__(self, channel, updateInterval):
         TimeBasedUpdater.__init__(self, channel, updateInterval)
 
-    def dataAvailable(self, measurement):
-        if self.isUpdateIntervalExpired() or self.isUpdateRunning:
-            print("New data: {0} - {1}".format(self.channel, measurement))
-            #self.dispatcher.dispatch(channelIdentifier, measurement, self)
+    def handleAvailableData(self, measurement):
+        if self.isUpdateIntervalExpired() and not self.isUpdateRunning:
+            self.runUpdate(measurement)
 
-    def notifyUpdateResult(self, result):
-        self.updateDone()
+    def resolveUpdateResult(self, result):
+        TimeBasedUpdater.resolveUpdateResult(self, result)
+        print(result)
 
 class BufferedUpdater(TimeBasedUpdater):
     """

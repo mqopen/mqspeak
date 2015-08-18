@@ -2,6 +2,7 @@ import datetime
 import threading
 import urllib.parse
 import http.client
+import collections
 import sys
 
 class ChannelUpdateDispatcher:
@@ -16,23 +17,28 @@ class ChannelUpdateDispatcher:
         self.sender = sender
         self.dispatchLock = threading.Semaphore(0)
         self.running = False
+        self.updateQueue = collections.deque()
 
     @classmethod
     def createThingSpeakUpdateDispatcher(cls, channelConvertMapping):
         """
         channelConvertMapping: mapping {channel: channelParamConverter}
         """
-        return cls(channelConvertMapping)
+        return cls(ThingSpeakSender(channelConvertMapping))
 
-    def updateAvailable(self, channelIdentifier, measurement, resultNotify):
+    def updateAvailable(self, channel, measurement, resultNotify):
         """
         Notify main thread when new data is available
         """
+        self.updateQueue.append((channel, measurement, resultNotify))
+        self.dispatchLock.release()
 
     def sendJobDone(self, result):
         """
         notify updater
         """
+        (returnCode, updater) = result
+        updater.notifyUpdateResult(returnCode)
 
     def _checkSendResult(self, result):
         (status, reason, data) = result
@@ -49,6 +55,8 @@ class ChannelUpdateDispatcher:
             if not self.running:
                 return
             # start send thread
+            (channel, measurement, resultNotify) = self.updateQueue.popleft()
+            self.dispatch(channel, measurement, resultNotify)
 
     def stop(self):
         self.running = False
@@ -63,7 +71,7 @@ class ChannelUpdateDispatcher:
         updater: notified object with update results
         """
         threading.Thread(
-                target = SendRunner(self.sender, channel, self.measurement, updater)
+                target = SendRunner(self.sender, channel, measurement, updater, self)
             ).start()
 
 class ThingSpeakSender:
@@ -74,7 +82,7 @@ class ThingSpeakSender:
         """
         self.channelConvertMapping = channelConvertMapping
 
-    def send(self, measurement):
+    def send(self, channel,  measurement):
         """
         Send measurement to ThinkSpeak and return set with results:
         (responseStatus, responseReason, responseData)
@@ -87,23 +95,26 @@ class ThingSpeakSender:
         #data = response.read().decode("utf-8")
         #conn.close()
         #return (response.status, response.reason, data)
+        return "Hello"
 
 class SendRunner:
     """
     Callable wrapper class for sending data to ThingSpeak in separae thread.
     """
 
-    def __init__(self, sender, measurement, jobNotify):
+    def __init__(self, sender, channel, measurement, updater, jobNotify):
         """
         jobNotify: listener object called after data send.
         """
         self.sender = sender
+        self.channel = channel
         self.measurement = measurement
+        self.updater = updater
         self.jobNotify = jobNotify
 
     def __call__(self):
         try :
-            result = self.sender.send(self.measurement)
+            result = (self.sender.send(self.channel, self.measurement), self.updater)
             self.jobNotify.sendJobDone(result)
         except Exception as ex:
             self.jobNotify.sendJobDone(ex)
