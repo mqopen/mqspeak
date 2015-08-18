@@ -87,15 +87,14 @@ class ThingSpeakSender:
         Send measurement to ThinkSpeak and return set with results:
         (responseStatus, responseReason, responseData)
         """
-        #params = self.paramConverter.convert(measurement)
-        #params.update({'api_key': self.writeKey})
-        #conn = http.client.HTTPSConnection("api.thingspeak.com")
-        #conn.request("POST", "/update", urllib.parse.urlencode(params))
-        #response = conn.getresponse()
-        #data = response.read().decode("utf-8")
-        #conn.close()
-        #return (response.status, response.reason, data)
-        return "Hello"
+        params = self.channelConvertMapping[channel].convert(measurement)
+        params.update({'api_key': channel.apiKey})
+        conn = http.client.HTTPSConnection("api.thingspeak.com")
+        conn.request("POST", "/update", urllib.parse.urlencode(params))
+        response = conn.getresponse()
+        data = response.read().decode("utf-8")
+        conn.close()
+        return (response.status, response.reason, data)
 
 class SendRunner:
     """

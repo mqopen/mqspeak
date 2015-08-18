@@ -1,3 +1,5 @@
+from mqspeak.data import Measurement
+
 class DataCollector:
     """
     Object for collecting received data from MQTT brokers. This object is also resposible
@@ -19,7 +21,9 @@ class DataCollector:
             if updateBuffer.isComplete():
                 data = updateBuffer.getData()
                 updateBuffer.reset()
-                self.channelUpdateSupervisor.dataAvailable(updateBuffer.channel, data)
+
+                measurement = Measurement.currentMeasurement(data)
+                self.channelUpdateSupervisor.dataAvailable(updateBuffer.channel, measurement)
 
 class UpdateBuffer:
     """
