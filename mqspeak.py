@@ -2,12 +2,8 @@
 from mqspeak.system import System
 from mqspeak.receiving import BrokerThreadManager
 from mqspeak.sending import ChannelUpdateDispatcher
-from mqspeak.collecting import DataCollector, UpdateBuffer
-from mqspeak.updating import ChannnelUpdateSupervisor, BlackoutUpdater
-from mqspeak.data import MeasurementParamConverter, DataIdentifier
-from mqspeak.broker import Broker
-from mqspeak.channel import Channel
-import datetime
+from mqspeak.collecting import DataCollector
+from mqspeak.updating import ChannnelUpdateSupervisor
 
 def main():
     system = System()
@@ -16,9 +12,11 @@ def main():
     updateDispatcher = ChannelUpdateDispatcher.createThingSpeakUpdateDispatcher(channelConvertMapping)
 
     # params: updateBuffers, channelUpdateSupervisor
-    dataCollector = DataCollector(system.getUpdateBuffers, None)
+    channelUpdateSupervisor = ChannnelUpdateSupervisor(None)
+    dataCollector = DataCollector(system.getUpdateBuffers(), channelUpdateSupervisor)
 
-    brokerManager = BrokerThreadManager(system.getBrokerListenDescriptors(), None)
+    # MQTT cliens
+    brokerManager = BrokerThreadManager(system.getBrokerListenDescriptors(), dataCollector)
 
     # run all MQTT client threads
     brokerManager.start()

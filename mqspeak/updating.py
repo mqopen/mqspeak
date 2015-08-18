@@ -18,6 +18,8 @@ class ChannnelUpdateSupervisor:
         """
         Deliver new update to correct Updater object.
         """
+        print("Update received: {0}: {1}".format(channelIdentifier, measurement))
+        return
         updater = self.channelUpdaterMapping[channelIdentifier]
         updater.update()
 

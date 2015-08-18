@@ -75,8 +75,8 @@ class BrokerReceiver:
         The callback for when a PUBLISH message is received from the server.
         """
         dataID = DataIdentifier(self.broker, msg.topic)
-        print("received: {0} - {1}".format(dataID, msg.payload.decode("utf-8")))
-        #self.dataCollector.onNewData(dataID, msg.payload.decode("utf-8"))
+        data = msg.payload.decode("utf-8")
+        self.dataCollector.onNewData(dataID, data)
 
     def stop(self):
         self.client.disconnect()

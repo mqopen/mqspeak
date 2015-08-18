@@ -66,6 +66,11 @@ class DataIdentifier:
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+        if not isinstance(other, DataIdentifier):
+            return False
+        return self.broker == other.broker and self.topic == other.topic
+
 class ConvertException(Exception):
     """
     Conversion error

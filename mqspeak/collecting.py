@@ -19,7 +19,7 @@ class DataCollector:
             if updateBuffer.isComplete():
                 data = updateBuffer.getData()
                 updateBuffer.reset
-                self.channelUpdateSupervisor.dataAvailable(updateBuffer.channelIdentifier, data)
+                self.channelUpdateSupervisor.dataAvailable(updateBuffer.channel, data)
 
 class UpdateBuffer:
     """

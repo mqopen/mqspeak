@@ -1,7 +1,5 @@
 from mqspeak import args
 from mqspeak.config import ProgramConfig
-from mqspeak.channel import Channel
-from mqspeak.updating import ChannnelUpdateSupervisor
 from mqspeak.data import MeasurementParamConverter
 from mqspeak.collecting import UpdateBuffer
 
@@ -14,21 +12,6 @@ class System:
         self.cliArgs = args.parse_args()
         self.config = ProgramConfig(self.cliArgs.config)
         self.config.parse()
-
-    # TO DELETE
-    def _getUpdateChannels(self):
-        """
-        Get list of update channels.
-        """
-        return self.config.channels
-
-    # TO DELETE
-    def _getChannelParamConverter(self, channel):
-        """
-        Get mapping object describing data conversion for particular channel
-
-        {dataIdentification: "field"}
-        """
 
     def getChannelConvertMapping(self):
         """
@@ -59,7 +42,7 @@ class System:
     def getUpdateBuffers(self):
         updateBuffers = []
         for channel in self.config.channels:
-            updateBuffers.append(self.getUpdateBuffer)
+            updateBuffers.append(self.getUpdateBuffer(channel))
         return updateBuffers
 
     def getUpdateBuffer(self, channel):
