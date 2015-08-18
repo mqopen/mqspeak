@@ -35,10 +35,6 @@ class System:
             listenDescriptors.append(listenDescriptor)
         return listenDescriptors
 
-    def getChannelUpdateSupervisor(self):
-        for channel in self.config.channels:
-            pass
-
     def getUpdateBuffers(self):
         updateBuffers = []
         for channel in self.config.channels:
@@ -51,3 +47,12 @@ class System:
         """
         dataIdentifiers = self.config.getDataFieldMapping(channel).keys()
         return UpdateBuffer(channel, dataIdentifiers)
+
+    def getChannelUpdateMapping(self):
+        """
+        Get mapping {channel: updater}
+        """
+        channelUpdateMapping = {}
+        for channel in self.config.channels:
+            channelUpdateMapping[channel] = self.config.getChannelUpdater(channel)
+        return channelUpdateMapping

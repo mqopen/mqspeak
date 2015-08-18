@@ -77,13 +77,13 @@ class ProgramConfig:
         updateRate = datetime.timedelta(seconds = self.parser.getint(channelSection, "UpdateRate"))
         updaterName = self.parser.get(channelSection, "UpdateType")
         if updaterName == "blackout":
-            return BlackoutUpdater(updateRate)
+            return BlackoutUpdater(channel, updateRate)
         elif updaterName == "buffered":
-            return BufferedUpdater(updateRate)
+            return BufferedUpdater(channel, updateRate)
         elif updaterName == "average":
-            return AverageUpdater(updateRate)
+            return AverageUpdater(channel, updateRate)
         elif updaterName == "onchange":
-            return OnChangeUpdater()
+            return OnChangeUpdater(channel)
         else:
             raise ConfigException("Unknown UpdateType: {0}".format(updaterName))
 

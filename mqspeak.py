@@ -8,11 +8,11 @@ from mqspeak.updating import ChannnelUpdateSupervisor
 def main():
     system = System()
 
+    # Channel update dispatcher object
     channelConvertMapping = system.getChannelConvertMapping()
     updateDispatcher = ChannelUpdateDispatcher.createThingSpeakUpdateDispatcher(channelConvertMapping)
 
-    # params: updateBuffers, channelUpdateSupervisor
-    channelUpdateSupervisor = ChannnelUpdateSupervisor(None)
+    channelUpdateSupervisor = ChannnelUpdateSupervisor(system.getChannelUpdateMapping())
     dataCollector = DataCollector(system.getUpdateBuffers(), channelUpdateSupervisor)
 
     # MQTT cliens

@@ -14,27 +14,29 @@ class ChannnelUpdateSupervisor:
         """
         self.channelUpdaterMapping = channelUpdaterMapping
 
-    def dataAvailable(self, channelIdentifier, measurement):
+    def dataAvailable(self, channel, measurement):
         """
         Deliver new update to correct Updater object.
         """
-        print("Update received: {0}: {1}".format(channelIdentifier, measurement))
-        return
-        updater = self.channelUpdaterMapping[channelIdentifier]
-        updater.update()
+        updater = self.channelUpdaterMapping[channel]
+        updater.dataAvailable(measurement)
 
 class BaseUpdater:
     """
     Updater object base class
     """
 
-    def __init__(self):
+    def __init__(self, channel):
+        """
+        channel: updated channel
+        """
+        self.channel = channel
         self.isUpdateRunning = False
 
     def setDispatcher(self, dispatcher):
         self.dispatcher = dispatcher
 
-    def update(self, measurement):
+    def dataAvailable(self, measurement):
         """
         Update new data.
         """
@@ -48,11 +50,11 @@ class BaseUpdater:
 
 class TimeBasedUpdater(BaseUpdater):
 
-    def __init__(self, updateInterval):
+    def __init__(self, channel, updateInterval):
         """
         updateInterval: timedelta object
         """
-        BaseUpdater.__init__(self)
+        BaseUpdater.__init__(self, channel)
         self.updateInterval = updateInterval
         self.lastUpdated = datetime.datetime.min
 
@@ -67,12 +69,12 @@ class TimeBasedUpdater(BaseUpdater):
 
 class BlackoutUpdater(TimeBasedUpdater):
 
-    def __init__(self, updateInterval):
-        TimeBasedUpdater.__init__(self, updateInterval)
+    def __init__(self, channel, updateInterval):
+        TimeBasedUpdater.__init__(self, channel, updateInterval)
 
-    def dataAvailable(self, channelIdentifier, measurement):
+    def dataAvailable(self, measurement):
         if self.isUpdateIntervalExpired() or self.isUpdateRunning:
-            print("New data: {0} - {1}".format(channelIdentifier, measurement))
+            print("New data: {0} - {1}".format(self.channel, measurement))
             #self.dispatcher.dispatch(channelIdentifier, measurement, self)
 
     def notifyUpdateResult(self, result):
@@ -84,8 +86,8 @@ class BufferedUpdater(TimeBasedUpdater):
     after time expires.
     """
 
-    def __init__(self, updateInterval):
-        TimeBasedUpdater.__init__(self, updateInterval)
+    def __init__(self, channel, updateInterval):
+        TimeBasedUpdater.__init__(self, channel, updateInterval)
         self.scheduler = sched.scheduler(time.time, time.sleep)
 
 class AverageUpdater(BufferedUpdater):
@@ -94,14 +96,14 @@ class AverageUpdater(BufferedUpdater):
     average value while sending them.
     """
 
-    def __init__(self, updateInterval):
-        BufferedUpdater.__init__(self, updateInterval)
+    def __init__(self, channel, updateInterval):
+        BufferedUpdater.__init__(self, channel, updateInterval)
 
 class OnChangeUpdater(BaseUpdater):
     """
     Send every value change.
     """
 
-    def __init__(self):
-        BaseUpdater.__init__(self)
+    def __init__(self, channel):
+        BaseUpdater.__init__(self, channel)
         self.changeBuffer = []
