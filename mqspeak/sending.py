@@ -40,13 +40,6 @@ class ChannelUpdateDispatcher:
         (returnCode, updater) = result
         updater.notifyUpdateResult(returnCode)
 
-    def _checkSendResult(self, result):
-        (status, reason, data) = result
-        if status != 200:
-            print("Response status error: {0} {1} - {2}.".format(status, reason, data), file = sys.stderr)
-        elif data == "0":
-            print("Data send error: ThingSpeak responded with return code 0.", file = sys.stderr)
-
     def run(self):
         self.running = True
         while self.running:
@@ -94,7 +87,17 @@ class ThingSpeakSender:
         response = conn.getresponse()
         data = response.read().decode("utf-8")
         conn.close()
-        return (response.status, response.reason, data)
+        result = (response.status, response.reason, data)
+        self._checkSendResult(result)
+        return result
+
+    def _checkSendResult(self, result):
+        (status, reason, data) = result
+        if status != 200:
+            print("Response status error: {0} {1} - {2}.".format(status, reason, data), file = sys.stderr)
+        elif data == "0":
+            print("Data send error: ThingSpeak responded with return code 0.", file = sys.stderr)
+
 
 class SendRunner:
     """

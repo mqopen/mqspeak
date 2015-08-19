@@ -102,7 +102,6 @@ class BlackoutUpdater(TimeBasedUpdater):
 
     def resolveUpdateResult(self, result):
         TimeBasedUpdater.resolveUpdateResult(self, result)
-        print(result)
 
 class BufferedUpdater(TimeBasedUpdater):
     """
