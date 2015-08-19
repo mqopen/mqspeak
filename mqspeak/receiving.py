@@ -115,7 +115,7 @@ class BrokerReceiver:
         self.dataCollector.onNewData(dataID, data)
 
     def onSubscribe(self, client, userdata, mid, granted_qos):
-        print("{0} {1}".format(mid, granted_qos))
+        pass
 
     def onUnsubscribe(self, client, userdata, mid):
         pass
