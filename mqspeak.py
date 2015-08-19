@@ -23,10 +23,16 @@ def main():
     brokerManager.start()
 
     # run main thread
-    updateDispatcher.run()
+    try:
+        updateDispatcher.run()
+    except KeyboardInterrupt as ex:
 
-    # program exit
-    updateDispatcher.stop()
+        # program exit
+        brokerManager.stop()
+        updateDispatcher.stop()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt as ex:
+        pass

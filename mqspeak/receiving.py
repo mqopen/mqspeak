@@ -1,5 +1,7 @@
 from mqspeak.data import DataIdentifier
 import threading
+import socket
+import os
 import paho.mqtt.client as mqtt
 
 class BrokerThreadManager:
@@ -42,6 +44,8 @@ class BrokerReceiver:
     Broker receiving thread
     """
 
+    receiverID = 0
+
     def __init__(self,  listenDescriptor, dataCollector):
         """
         listenDescriptor: set containing following fields: (broker, subscription)
@@ -51,32 +55,73 @@ class BrokerReceiver:
         """
         (self.broker, self.subsciption) = listenDescriptor
         self.dataCollector = dataCollector
-        self.client = mqtt.Client()
-        self.client.on_connect = self.on_connect
-        self.client.on_message = self.on_message
+        self.clientID = self._createClientID()
+        self.client = mqtt.Client(client_id = self.clientID)
+        self._registerCallbacks()
         if self.broker.isAuthenticationRequired():
             self.client.username_pw_set(self.broker.user, self.broker.password)
+
+    def _createClientID(self):
+        clientID = "mqspeak-{0}-{1}-{2}".format(socket.gethostname(), os.getpid(), BrokerReceiver.receiverID)
+        BrokerReceiver.receiverID += 1
+        return clientID
+
+    def _registerCallbacks(self):
+        self.client.on_connect = self.onConnect
+        self.client.on_disconnect = self.onDisconnect
+        self.client.on_message = self.onMessage
+        self.client.on_subscribe = self.onSubscribe
+        self.client.on_unsubscribe = self.onUnsubscribe
+        self.client.on_log = self.onLog
 
     def __call__(self):
         keepAliveInterval = 60
         self.client.connect(self.broker.host, self.broker.port, keepAliveInterval)
         self.client.loop_forever()
 
-    def on_connect(self, client, userdata, flags, rc):
+    def onConnect(self, client, userdata, flags, rc):
         """
         The callback for when the client receives a CONNACK response from the server.
         """
-        print("Broker {0} [{1}:{2}] connected with result code: {3}.".format(self.broker.name, self.broker.host, self.broker.port, rc))
+        print("Client {0} ({1} [{2}:{3}]): [{4}] {5}.".format(self.clientID, self.broker.name, self.broker.host, self.broker.port, rc, self._getClientConnectionStatus(rc)))
         for sub in self.subsciption:
-            self.client.subscribe(sub)
+            (result, mid) = self.client.subscribe(sub)
 
-    def on_message(self, client, userdata, msg):
+    def _getClientConnectionStatus(self, rc):
+        if rc == 0:
+            return "Connection successful"
+        elif rc == 1:
+            return "Connection refused - incorrect protocol version"
+        elif rc == 2:
+            return "Connection refused - invalid client identifier"
+        elif rc == 3:
+            return "Connection refused - server unavailable"
+        elif rc == 4:
+            return "Connection refused - bad username or password"
+        elif rc == 5:
+            return "Connection refused - not authorised"
+        else:
+            return "Unknown return code: {0}".format(rc)
+
+    def onDisconnect(self, client, userdata, rc):
+        print("Client dicsconnect: {0}".format(rc))
+
+    def onMessage(self, client, userdata, msg):
         """
         The callback for when a PUBLISH message is received from the server.
         """
         dataID = DataIdentifier(self.broker, msg.topic)
         data = msg.payload.decode("utf-8")
         self.dataCollector.onNewData(dataID, data)
+
+    def onSubscribe(self, client, userdata, mid, granted_qos):
+        print("{0} {1}".format(mid, granted_qos))
+
+    def onUnsubscribe(self, client, userdata, mid):
+        pass
+
+    def onLog(self, client, userdata, level, buf):
+        pass
 
     def stop(self):
         self.client.disconnect()
