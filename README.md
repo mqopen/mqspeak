@@ -1,8 +1,9 @@
 # mqspeak - MQTT to ThingSpeak bridge
 
-mqspeak is MQTT client which collect data and transforms them into ThingSpeak channel
-updates. It is able to handle multiple MQTT connections and independetly update
-multiple ThingSpeak channels.
+mqspeak is [MQTT](http://mqtt.org/) client which collect data and transforms
+them into [ThingSpeak](https://thingspeak.com/) channel updates. It is able
+to handle multiple MQTT connections and independetly update multiple ThingSpeak
+channels.
 
 ### Configuration
 
