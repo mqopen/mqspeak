@@ -5,6 +5,16 @@ them into [ThingSpeak](https://thingspeak.com/) channel updates. It is able
 to handle multiple MQTT connections and independetly update multiple ThingSpeak
 channels.
 
+### Dependencies
+
+Application runs at python3. It also requires [paho](https://www.eclipse.org/paho/clients/python/)
+MQTT client library. On Debian system install necessary dependencies with
+following commands:
+
+    $ sudo apt-get update
+    $ sudo apt-get install python3 python3-pip
+    $ sudo pip3 install paho-mqtt
+
 ### Configuration
 
 mqspeak is configured using configuration file specified with `-c` or `--config`
