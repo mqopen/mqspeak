@@ -95,16 +95,20 @@ class ThingSpeakSender:
         Send measurement to ThinkSpeak and return set with results:
         (responseStatus, responseReason, responseData)
         """
-        params = self.channelConvertMapping[channel].convert(measurement)
-        params.update({'api_key': channel.apiKey})
-        conn = http.client.HTTPSConnection("api.thingspeak.com")
-        conn.request("POST", "/update", urllib.parse.urlencode(params))
-        response = conn.getresponse()
-        data = response.read().decode("utf-8")
-        conn.close()
-        result = (response.status, response.reason, data)
-        self._checkSendResult(result)
-        return result
+        try:
+            params = self.channelConvertMapping[channel].convert(measurement)
+            params.update({'api_key': channel.apiKey})
+            conn = http.client.HTTPSConnection("api.thingspeak.com")
+            conn.request("POST", "/update", urllib.parse.urlencode(params))
+            response = conn.getresponse()
+            data = response.read().decode("utf-8")
+            conn.close()
+            result = (response.status, response.reason, data)
+            self._checkSendResult(result)
+            return result
+        except BaseException as ex:
+            print("Send exception: {0}".format(ex), file = sys.stderr)
+            return None
 
     def _checkSendResult(self, result):
         (status, reason, data) = result
