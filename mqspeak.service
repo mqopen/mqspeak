@@ -1,6 +1,7 @@
 [Unit]
 Description=MQTT to ThingSpeak bridge
-After=mosquitto.service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
