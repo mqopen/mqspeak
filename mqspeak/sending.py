@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import collections
 import datetime
+import http.client
+import sys
 import threading
 import urllib.parse
-import http.client
-import collections
-import sys
 
 class ChannelUpdateDispatcher:
     """

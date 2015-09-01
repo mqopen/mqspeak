@@ -14,10 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from mqspeak.data import DataIdentifier
-import threading
-import socket
 import os
 import paho.mqtt.client as mqtt
+import socket
+import threading
 
 class BrokerThreadManager:
     """

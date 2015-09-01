@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from mqspeak import args
+from mqspeak.collecting import UpdateBuffer
 from mqspeak.config import ProgramConfig
 from mqspeak.data import MeasurementParamConverter
-from mqspeak.collecting import UpdateBuffer
+from mqspeak import args
 
 class System:
     """

@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from mqspeak.system import System
+from mqspeak.collecting import DataCollector
 from mqspeak.receiving import BrokerThreadManager
 from mqspeak.sending import ChannelUpdateDispatcher
-from mqspeak.collecting import DataCollector
+from mqspeak.system import System
 from mqspeak.updating import ChannnelUpdateSupervisor
 
 def main():
