@@ -17,6 +17,7 @@ from mqspeak.data import DataIdentifier
 import os
 import paho.mqtt.client as mqtt
 import socket
+import sys
 import threading
 
 class BrokerThreadManager:
@@ -130,10 +131,11 @@ class BrokerReceiver:
         The callback for when a PUBLISH message is received from the server.
         """
         dataID = DataIdentifier(self.broker, msg.topic)
-
-        # catch UnicodeDecodeError when some mess is received
-        data = msg.payload.decode("utf-8")
-        self.dataCollector.onNewData(dataID, data)
+        try:
+            data = msg.payload.decode("utf-8")
+            self.dataCollector.onNewData(dataID, data)
+        except UnicodeError as ex:
+            print("Can't decode received message payload: {0}".format(msg.payload), file = sys.stderr)
 
     def onSubscribe(self, client, userdata, mid, granted_qos):
         """

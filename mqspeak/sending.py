@@ -112,7 +112,12 @@ class ThingSpeakSender:
             response = conn.getresponse()
 
             # catch UnicodeDecodeError when some mess is received
-            data = response.read().decode("utf-8")
+            data = None
+            responseRaw = response.read()
+            try:
+                data = responseRaw.decode("utf-8")
+            except UnicodeError as ex:
+                print("Can't decode response data: {0}".format(responseRaw), file = sys.stderr)
             conn.close()
             result = (response.status, response.reason, data)
             self._checkSendResult(result)
