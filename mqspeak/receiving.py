@@ -59,6 +59,7 @@ class BrokerReceiver:
     Broker receiving thread
     """
 
+    # TODO: create separate object for managing receiver IDs
     receiverID = 0
 
     def __init__(self,  listenDescriptor, dataCollector):
@@ -119,6 +120,9 @@ class BrokerReceiver:
             return "Unknown return code: {0}".format(rc)
 
     def onDisconnect(self, client, userdata, rc):
+        """
+        Callback when client is disconnected.
+        """
         print("Client dicsconnect: {0}".format(rc))
 
     def onMessage(self, client, userdata, msg):
@@ -126,19 +130,30 @@ class BrokerReceiver:
         The callback for when a PUBLISH message is received from the server.
         """
         dataID = DataIdentifier(self.broker, msg.topic)
+
+        # catch UnicodeDecodeError when some mess is received
         data = msg.payload.decode("utf-8")
         self.dataCollector.onNewData(dataID, data)
 
     def onSubscribe(self, client, userdata, mid, granted_qos):
-        pass
+        """
+        Callback when client is subscribed to topic.
+        """
 
     def onUnsubscribe(self, client, userdata, mid):
-        pass
+        """
+        Callback when client is unsubscribed.
+        """
 
     def onLog(self, client, userdata, level, buf):
-        pass
+        """
+        Logging messages.
+        """
 
     def stop(self):
+        """
+        Stop receiver thread. Call this method to nicely end __call__() method.
+        """
         self.client.disconnect()
 
 class ThreadManagerException(Exception):

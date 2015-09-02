@@ -31,6 +31,9 @@ class DataCollector:
         self.channelUpdateSupervisor = channelUpdateSupervisor
 
     def onNewData(self, dataIdentifier, data):
+        """
+        Notify data collector when new data is available.
+        """
         for updateBuffer in self.updateBuffers:
             updateBuffer.updateReceivedData(dataIdentifier, data)
             if updateBuffer.isComplete():
@@ -55,6 +58,9 @@ class UpdateBuffer:
         self.reset()
 
     def isComplete(self):
+        """
+        True if all required data are buffered. False otherwise.
+        """
         return not any(x is None for x in self.dataDict.values())
 
     def updateReceivedData(self, dataIdentifier, value):
@@ -67,16 +73,24 @@ class UpdateBuffer:
             self.dataDict[dataIdentifier] = value
 
     def getData(self):
+        """
+        Get dictionary with buffered data.
+        """
         if not self.isComplete():
             raise TopicException("Some topic data is missing")
         else:
             return self.dataDict
 
     def reset(self):
+        """
+        Clear buffered data.
+        """
         self.dataDict = dict()
         for dataIdentifier in self.dataIdentifiers:
             self.dataDict[dataIdentifier] = None
 
 
 class TopicException(Exception):
-    pass
+    """
+    Update buffer related errors.
+    """

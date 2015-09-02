@@ -25,6 +25,10 @@ class ProgramConfig:
     Program configuration parser.
     """
 
+    # TODO: implement some configuration cache object. This object should allow to parse
+    #       configuration file only once. It also should allow to check correct config file
+    #       syntax without running main program logic.
+
     def __init__(self, configFile):
         """
         configFile: path to configuration file

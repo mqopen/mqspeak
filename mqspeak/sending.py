@@ -78,11 +78,20 @@ class ChannelUpdateDispatcher:
         measurement: update data
         updater: notified object with update results
         """
-        threading.Thread(
-                target = SendRunner(self.sender, channel, measurement, updater, self)
-            ).start()
+        sendThread = threading.Thread(
+            target = SendRunner(
+                self.sender,
+                channel,
+                measurement,
+                updater,
+                self))
+        sendThread.start()
 
 class ThingSpeakSender:
+    """
+    Class for sending data to ThingSpeak. This class send measurements to URL api.thingspeak.com
+    using HTTPS method. It also parses send result and checks if transfer was successful.
+    """
 
     def __init__(self, channelConvertMapping):
         """
@@ -101,6 +110,8 @@ class ThingSpeakSender:
             conn = http.client.HTTPSConnection("api.thingspeak.com")
             conn.request("POST", "/update", urllib.parse.urlencode(params))
             response = conn.getresponse()
+
+            # catch UnicodeDecodeError when some mess is received
             data = response.read().decode("utf-8")
             conn.close()
             result = (response.status, response.reason, data)
@@ -125,6 +136,11 @@ class SendRunner:
 
     def __init__(self, sender, channel, measurement, updater, jobNotify):
         """
+        sender: sender object. This object must implement send(channel,  measurement) member
+            method.
+        channel: channel description object
+        measurement: measured data
+        updater: updater object which will be called by dispatcher after send job is done
         jobNotify: listener object called after data send.
         """
         self.sender = sender
@@ -134,6 +150,9 @@ class SendRunner:
         self.jobNotify = jobNotify
 
     def __call__(self):
+        """
+        Thread code.
+        """
         try :
             result = (self.sender.send(self.channel, self.measurement), self.updater)
             self.jobNotify.sendJobDone(result)

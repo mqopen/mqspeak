@@ -20,10 +20,14 @@ from mqspeak import args
 
 class System:
     """
-    System initialization object
+    System initialization object. This object encapsulates program configuration state
+    defined by command line arguments and parsed configuration file.
     """
 
     def __init__(self):
+        """
+        Initiate system configuration.
+        """
         self.cliArgs = args.parse_args()
         self.config = ProgramConfig(self.cliArgs.config)
         self.config.parse()
@@ -51,6 +55,9 @@ class System:
         return listenDescriptors
 
     def getUpdateBuffers(self):
+        """
+        Get list of UpdateBuffer instances.
+        """
         updateBuffers = []
         for channel in self.config.channels:
             updateBuffers.append(self.getUpdateBuffer(channel))

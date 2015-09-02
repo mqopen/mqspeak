@@ -31,6 +31,9 @@ class Measurement:
 
     @classmethod
     def currentMeasurement(cls, fields):
+        """
+        Build measurement object with current time.
+        """
         return cls(fields, datetime.datetime.now())
 
     def __len__(self):

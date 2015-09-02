@@ -15,10 +15,16 @@
 
 class Channel:
     """
-    ThingSpeak channel identification object
+    ThingSpeak channel identification object.
     """
 
     def __init__(self, name, apiKey):
+        """
+        Initiate channel object.
+
+        name: channel name
+        apiKey: channel write API key
+        """
         self.name = name
         self.apiKey = apiKey
 

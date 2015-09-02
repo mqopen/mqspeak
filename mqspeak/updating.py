@@ -107,6 +107,10 @@ class TimeBasedUpdater(BaseUpdater):
         self.lastUpdated = datetime.datetime.now()
 
 class BlackoutUpdater(TimeBasedUpdater):
+    """
+    Ignore any incomming data during blackkout period. Send first data after this
+    period expires.
+    """
 
     def __init__(self, channel, updateInterval):
         TimeBasedUpdater.__init__(self, channel, updateInterval)

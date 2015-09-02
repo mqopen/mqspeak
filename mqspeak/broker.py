@@ -14,18 +14,34 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class Broker:
+    """
+    Broker identification object.
+    """
 
     def __init__(self, name, host="127.0.0.1", port=1883):
+        """
+        Initiate broker object.
+
+        name: broker name
+        host: broker IP address or hostname
+        port: broker listen port
+        """
         self.name = name
         self.host = host
         self.port = port
 
     def setCredentials(self, user, password):
+        """
+        Set authentication credentials.
+        """
         self._checkUserAndPass(user, password)
         self.user = user
         self.password = password
 
     def isAuthenticationRequired(self):
+        """
+        True if broker requires authentication. False otherwise.
+        """
         return hasattr(self, "user") and hasattr(self, "password")
 
     def _checkUserAndPass(self, user, password):
