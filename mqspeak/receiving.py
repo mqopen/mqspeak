@@ -32,7 +32,8 @@ class BrokerThreadManager:
             subsriptionIterable:
         dataCollector: DataCollector object
         """
-        self.clients = [BrokerReceiver(x, dataCollector) for x in listenDescriptors]
+        self.idManager = BrokerReceiverIDManager()
+        self.clients = [BrokerReceiver(self.idManager.createReceiverID(), x, dataCollector) for x in listenDescriptors]
         self.isThreadsRunning = False
 
     def start(self):
@@ -60,10 +61,7 @@ class BrokerReceiver:
     Broker receiving thread
     """
 
-    # TODO: create separate object for managing receiver IDs
-    receiverID = 0
-
-    def __init__(self,  listenDescriptor, dataCollector):
+    def __init__(self, clientID, listenDescriptor, dataCollector):
         """
         listenDescriptor: set containing following fields: (broker, subscription)
             broker: broker descriptor object
@@ -72,16 +70,11 @@ class BrokerReceiver:
         """
         (self.broker, self.subsciption) = listenDescriptor
         self.dataCollector = dataCollector
-        self.clientID = self._createClientID()
-        self.client = mqtt.Client(client_id = self.clientID)
+        self.clientID = clientID
+        self.client = mqtt.Client(client_id = str(self.clientID))
         self._registerCallbacks()
         if self.broker.isAuthenticationRequired():
             self.client.username_pw_set(self.broker.user, self.broker.password)
-
-    def _createClientID(self):
-        clientID = "mqspeak-{0}-{1}-{2}".format(socket.gethostname(), os.getpid(), BrokerReceiver.receiverID)
-        BrokerReceiver.receiverID += 1
-        return clientID
 
     def _registerCallbacks(self):
         self.client.on_connect = self.onConnect
@@ -157,6 +150,44 @@ class BrokerReceiver:
         Stop receiver thread. Call this method to nicely end __call__() method.
         """
         self.client.disconnect()
+
+class BrokerReceiverID:
+    """
+    Broker receiver thread ID.
+    """
+
+    def __init__(self, hostname, pid, receiverID):
+        """
+        Create broker receiver thread lient ID.
+
+        hostname: machine hostname
+        pid: current pid
+        receiverID: receivin thread ID
+        """
+        self.hostname = hostname
+        self.pid = pid
+        self.receiverID = receiverID
+
+    def __str__(self):
+        return "mqspeak-{0}-{1}-{2}".format(self.hostname, self.pid, self.receiverID)
+
+    def __repr__(self):
+        return "<{0}>".format(self.__str__())
+
+class BrokerReceiverIDManager:
+    """
+    Manage receiver IDs.
+    """
+
+    def __init__(self):
+        self.hostname = socket.gethostname()
+        self.pid = os.getpid()
+        self.receiverCounter = 0
+
+    def createReceiverID(self):
+        _receiverID = self.receiverCounter
+        self.receiverCounter += 1
+        return BrokerReceiverID(self.hostname, self.pid, _receiverID)
 
 class ThreadManagerException(Exception):
     """
