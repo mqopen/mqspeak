@@ -95,11 +95,11 @@ Each channel section has to define `Key`, `UpdateRate` and `UpdateType` options.
 
 - `Key` - Channel API write key.
 - `UpdateRate` - Channel update interval in seconds. Currently, ThinkSpeak allows
-  at least 15 seconds.
+  interval 15 seconds or greater.
 - `UpdateType` - Channel update type. Possible values are `blackout`, `buffered`,
-  `average` and `onchange`
+  `average` and `onchange`.
   - `blackout` - Until `UpdateRate` interval is expired, any incoming data are
-    ignored. First data received after interval expiration are sent to ThingSpeak .
+    ignored. First data received after interval expiration are sent to ThingSpeak.
   - `buffered` - Incoming data are buffered during `UpdateRate` interval. After
     this interval expires, most recent values are immediately sent. **_Not implemented yet._**
   - `average` - Similar to `buffered` but mqspeak calculates average value of these
