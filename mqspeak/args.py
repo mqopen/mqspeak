@@ -16,8 +16,10 @@
 import argparse
 
 def create_parser():
-    parser = argparse.ArgumentParser(epilog='epilog',
-                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description="MQTT to ThingSpeak bridge",
+        epilog="Copyright (C) Ivo Slanina <ivo.slanina@gmail.com> https://github.com/buben19/mqspeak",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-c', '--config',
                         help='path to configuration file',
                         default="/etc/mqttbridge.conf")
