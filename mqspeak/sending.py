@@ -19,6 +19,7 @@ import http.client
 import sys
 import threading
 import urllib.parse
+from mqspeak.system import System
 
 class ChannelUpdateDispatcher:
     """
@@ -117,9 +118,15 @@ class ThingSpeakSender:
             try:
                 data = responseRaw.decode("utf-8")
             except UnicodeError as ex:
-                print("Can't decode response data: {0}".format(responseRaw), file = sys.stderr)
+                print("Can't decode response data: {0}".format(responseRaw), file=sys.stderr)
+                data = "<Decode error>"
             conn.close()
-            result = (response.status, response.reason, data)
+            status = response.status
+            reason = response.reason
+
+            if System.verbose:
+                print("Channel {0}: {1} {2}: {3}".format(channel, status, reason, data))
+            result = (status, reason, data)
             self._checkSendResult(result)
             return result
         except BaseException as ex:
