@@ -22,18 +22,18 @@ from mqspeak.system import System
 from mqspeak.updating import ChannnelUpdateSupervisor
 
 def main():
-    system = System()
+    System.initialize()
 
     # Channel update dispatcher object
-    channelConvertMapping = system.getChannelConvertMapping()
+    channelConvertMapping = System.getChannelConvertMapping()
     updateDispatcher = ChannelUpdateDispatcher.createThingSpeakUpdateDispatcher(channelConvertMapping)
 
-    channelUpdateSupervisor = ChannnelUpdateSupervisor(system.getChannelUpdateMapping())
+    channelUpdateSupervisor = ChannnelUpdateSupervisor(System.getChannelUpdateMapping())
     channelUpdateSupervisor.setDispatcher(updateDispatcher)
-    dataCollector = DataCollector(system.getUpdateBuffers(), channelUpdateSupervisor)
+    dataCollector = DataCollector(System.getUpdateBuffers(), channelUpdateSupervisor)
 
     # MQTT cliens
-    brokerManager = BrokerThreadManager(system.getBrokerListenDescriptors(), dataCollector)
+    brokerManager = BrokerThreadManager(System.getBrokerListenDescriptors(), dataCollector)
 
     # run all MQTT client threads
     brokerManager.start()

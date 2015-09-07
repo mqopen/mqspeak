@@ -24,57 +24,63 @@ class System:
     defined by command line arguments and parsed configuration file.
     """
 
-    def __init__(self):
+    @classmethod
+    def initialize(cls):
         """
         Initiate system configuration.
         """
-        self.cliArgs = args.parse_args()
-        self.config = ProgramConfig(self.cliArgs.config)
-        self.config.parse()
+        cls.cliArgs = args.parse_args()
+        cls.config = ProgramConfig(cls.cliArgs.config)
+        cls.config.parse()
 
-    def getChannelConvertMapping(self):
+    @classmethod
+    def getChannelConvertMapping(cls):
         """
         Get mapping for converting measurements for each channel
 
         {channel: channelParamConverter}
         """
         channelConvertMapping = {}
-        for channel in self.config.channels:
-            channelConvertMapping[channel] = MeasurementParamConverter(self.config.getDataFieldMapping(channel))
+        for channel in cls.config.channels:
+            channelConvertMapping[channel] = MeasurementParamConverter(cls.config.getDataFieldMapping(channel))
         return channelConvertMapping
 
-    def getBrokerListenDescriptors(self):
+    @classmethod
+    def getBrokerListenDescriptors(cls):
         """
         Get list of tuples (broker, ["subscribeTopic"])
         """
         listenDescriptors = []
-        for broker in self.config.brokers:
-            subscribeTopic = self.config.getBrokerSubscribtions(broker)
+        for broker in cls.config.brokers:
+            subscribeTopic = cls.config.getBrokerSubscribtions(broker)
             listenDescriptor = (broker, subscribeTopic)
             listenDescriptors.append(listenDescriptor)
         return listenDescriptors
 
-    def getUpdateBuffers(self):
+    @classmethod
+    def getUpdateBuffers(cls):
         """
         Get list of UpdateBuffer instances.
         """
         updateBuffers = []
-        for channel in self.config.channels:
-            updateBuffers.append(self.getUpdateBuffer(channel))
+        for channel in cls.config.channels:
+            updateBuffers.append(cls.getUpdateBuffer(channel))
         return updateBuffers
 
-    def getUpdateBuffer(self, channel):
+    @classmethod
+    def getUpdateBuffer(cls, channel):
         """
         Get list of UpdateBuffer for particular channel
         """
-        dataIdentifiers = self.config.getDataFieldMapping(channel).keys()
+        dataIdentifiers = cls.config.getDataFieldMapping(channel).keys()
         return UpdateBuffer(channel, dataIdentifiers)
 
-    def getChannelUpdateMapping(self):
+    @classmethod
+    def getChannelUpdateMapping(cls):
         """
         Get mapping {channel: updater}
         """
         channelUpdateMapping = {}
-        for channel in self.config.channels:
-            channelUpdateMapping[channel] = self.config.getChannelUpdater(channel)
+        for channel in cls.config.channels:
+            channelUpdateMapping[channel] = cls.config.getChannelUpdater(channel)
         return channelUpdateMapping
