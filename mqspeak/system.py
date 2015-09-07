@@ -33,6 +33,8 @@ class System:
         cls.config = ProgramConfig(cls.cliArgs.config)
         cls.config.parse()
 
+        cls.verbose = cls.cliArgs.verbose
+
     @classmethod
     def getChannelConvertMapping(cls):
         """

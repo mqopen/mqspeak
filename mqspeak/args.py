@@ -23,9 +23,9 @@ def create_parser():
     parser.add_argument('-c', '--config',
                         help='path to configuration file',
                         default="/etc/mqttbridge.conf")
-
-    # TODO: add verbose flag
-
+    parser.add_argument('-v', '--verbose',
+                        help='verbose',
+                        action='store_true')
     return parser
 
 def parse_args():
