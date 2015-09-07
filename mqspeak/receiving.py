@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from mqspeak.data import DataIdentifier
+from mqspeak.system import System
 import os
 import paho.mqtt.client as mqtt
 import socket
@@ -93,9 +94,49 @@ class BrokerReceiver:
         """
         The callback for when the client receives a CONNACK response from the server.
         """
-        print("Client {0} ({1} [{2}:{3}]): [{4}] {5}.".format(self.clientID, self.broker.name, self.broker.host, self.broker.port, rc, self._getClientConnectionStatus(rc)))
+        print("{0}: [{1}] {2}.".format(self._createClientIdentificationString(), rc, self._getClientConnectionStatus(rc)))
         for sub in self.subsciption:
             (result, mid) = self.client.subscribe(sub)
+
+    def onDisconnect(self, client, userdata, rc):
+        """
+        Callback when client is disconnected.
+        """
+        print("Client dicsconnect: {0}".format(rc))
+
+    def onMessage(self, client, userdata, msg):
+        """
+        The callback for when a PUBLISH message is received from the server.
+        """
+        dataID = DataIdentifier(self.broker, msg.topic)
+        try:
+            data = msg.payload.decode("utf-8")
+            self.dataCollector.onNewData(dataID, data)
+        except UnicodeError as ex:
+            print("Can't decode received message payload: {0}".format(msg.payload), file=sys.stderr)
+
+    def onSubscribe(self, client, userdata, mid, granted_qos):
+        """
+        Callback when client is subscribed to topic.
+        """
+
+    def onUnsubscribe(self, client, userdata, mid):
+        """
+        Callback when client is unsubscribed.
+        """
+
+    def onLog(self, client, userdata, level, buf):
+        """
+        Logging messages.
+        """
+        if System.verbose:
+            print("{0}: [{1}] {2}".format(self._createClientIdentificationString(), level, buf))
+
+    def stop(self):
+        """
+        Stop receiver thread. Call this method to nicely end __call__() method.
+        """
+        self.client.disconnect()
 
     def _getClientConnectionStatus(self, rc):
         if rc == 0:
@@ -113,43 +154,8 @@ class BrokerReceiver:
         else:
             return "Unknown return code: {0}".format(rc)
 
-    def onDisconnect(self, client, userdata, rc):
-        """
-        Callback when client is disconnected.
-        """
-        print("Client dicsconnect: {0}".format(rc))
-
-    def onMessage(self, client, userdata, msg):
-        """
-        The callback for when a PUBLISH message is received from the server.
-        """
-        dataID = DataIdentifier(self.broker, msg.topic)
-        try:
-            data = msg.payload.decode("utf-8")
-            self.dataCollector.onNewData(dataID, data)
-        except UnicodeError as ex:
-            print("Can't decode received message payload: {0}".format(msg.payload), file = sys.stderr)
-
-    def onSubscribe(self, client, userdata, mid, granted_qos):
-        """
-        Callback when client is subscribed to topic.
-        """
-
-    def onUnsubscribe(self, client, userdata, mid):
-        """
-        Callback when client is unsubscribed.
-        """
-
-    def onLog(self, client, userdata, level, buf):
-        """
-        Logging messages.
-        """
-
-    def stop(self):
-        """
-        Stop receiver thread. Call this method to nicely end __call__() method.
-        """
-        self.client.disconnect()
+    def _createClientIdentificationString(self):
+        return "{0} ({1} [{2}:{3}])".format(self.clientID, self.broker.name, self.broker.host, self.broker.port)
 
 class BrokerReceiverID:
     """
