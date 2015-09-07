@@ -69,9 +69,9 @@ class BrokerReceiver:
             subscription:
         dataCollector: listener object to deliver received updates
         """
+        self.clientID = clientID
         (self.broker, self.subsciption) = listenDescriptor
         self.dataCollector = dataCollector
-        self.clientID = clientID
         self.client = mqtt.Client(client_id = str(self.clientID))
         self._registerCallbacks()
         if self.broker.isAuthenticationRequired():
