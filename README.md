@@ -5,6 +5,9 @@ them into [ThingSpeak](https://thingspeak.com/) channel updates. It is able
 to handle multiple MQTT connections and independetly update multiple ThingSpeak
 channels.
 
+This is part of my IoT project. You can
+read more about it on my [blog](http://buben19.blogspot.com/).
+
 ### Dependencies
 
 Application runs at python3. It also requires [paho](https://www.eclipse.org/paho/clients/python/)
