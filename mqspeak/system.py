@@ -74,7 +74,7 @@ class System:
         """
         Get list of UpdateBuffer for particular channel
         """
-        dataIdentifiers = cls.config.getDataFieldMapping(channel).keys()
+        dataIdentifiers = list(cls.config.getDataFieldMapping(channel).keys())
         return UpdateBuffer(channel, dataIdentifiers)
 
     @classmethod

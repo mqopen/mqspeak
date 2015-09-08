@@ -17,11 +17,13 @@ import datetime
 
 class Measurement:
     """
-    Measured data mapping in DataIdentifier: value format with corresponding timestamp
+    Measured data mapping in DataIdentifier: value format with corresponding timestamp.
     """
 
     def __init__(self, fields, time):
         """
+        fields: maping {dataIdentifier: vaue}
+        time: measurement timestamp
         throws AttributeError: if length of fields is greater than 8
         """
         if len(fields) > 8:
@@ -33,8 +35,16 @@ class Measurement:
     def currentMeasurement(cls, fields):
         """
         Build measurement object with current time.
+
+        fields: maping {dataIdentifier: vaue}
         """
         return cls(fields, datetime.datetime.now())
+
+    def __str__(self):
+        return "[{0}] {1}".format(self.time, self.fields)
+
+    def __repr__(self):
+        return "<{0}>".format(self.__str__())
 
     def __len__(self):
         return len(self.fields)
@@ -57,7 +67,8 @@ class MeasurementParamConverter:
         """
         params = dict()
         for topicName in measurement.fields:
-            params[self.dataFieldsMapping[topicName]] = measurement.fields[topicName]
+            fieldName = self.dataFieldsMapping[topicName]
+            params[fieldName] = measurement.fields[topicName]
         return params
 
     def __str__(self):

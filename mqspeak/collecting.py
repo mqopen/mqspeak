@@ -37,10 +37,9 @@ class DataCollector:
         for updateBuffer in self.updateBuffers:
             updateBuffer.updateReceivedData(dataIdentifier, data)
             if updateBuffer.isComplete():
-                data = updateBuffer.getData()
+                d = updateBuffer.getData()
                 updateBuffer.reset()
-
-                measurement = Measurement.currentMeasurement(data)
+                measurement = Measurement.currentMeasurement(d)
                 self.channelUpdateSupervisor.dataAvailable(updateBuffer.channel, measurement)
 
 class UpdateBuffer:
