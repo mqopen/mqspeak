@@ -125,7 +125,7 @@ class ThingSpeakSender:
             reason = response.reason
 
             if System.verbose:
-                print("Channel {0}: {1} {2}: {3}".format(channel, status, reason, data))
+                print("Channel {0} response: {1} {2}: {3}".format(channel, status, reason, data))
             result = (status, reason, data)
             self._checkSendResult(result)
             return result
