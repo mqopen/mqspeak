@@ -38,6 +38,9 @@ class ChannnelUpdateSupervisor:
         updater.dataAvailable(measurement)
 
     def setDispatcher(self, dispatcher):
+        """
+        Assign a dispatcher to all updaters.
+        """
         for updater in self.channelUpdaterMapping.values():
             updater.setDispatcher(dispatcher)
 
@@ -55,6 +58,11 @@ class BaseUpdater:
         self.updateLock = threading.Semaphore(1)
 
     def setDispatcher(self, dispatcher):
+        """
+        Assign a dispatcher.
+
+        dispatcher: dispatcher object
+        """
         self.dispatcher = dispatcher
 
     def dataAvailable(self, measurement):
@@ -66,6 +74,11 @@ class BaseUpdater:
         self.updateLock.release()
 
     def handleAvailableData(self, measurement):
+        """
+        Handle new data in updater.
+
+        measurement: new data measurement
+        """
         raise NotImplementedError("Override this mehod in sub-class")
 
     def runUpdate(self, measurement):
@@ -85,6 +98,11 @@ class BaseUpdater:
         self.updateLock.release()
 
     def resolveUpdateResult(self, result):
+        """
+        Resolve update result in updater.
+
+        result: TODO
+        """
         raise NotImplementedError("Override this mehod in sub-class")
 
 class TimeBasedUpdater(BaseUpdater):
@@ -133,6 +151,12 @@ class BufferedUpdater(TimeBasedUpdater):
         self.scheduler = sched.scheduler(time.time, time.sleep)
         raise NotImplementedError("Not implemented yet")
 
+    def handleAvailableData(self, measurement):
+        pass
+
+    def resolveUpdateResult(self, result):
+        pass
+
 class AverageUpdater(BufferedUpdater):
     """
     Like BufferedUpdater but keep track all data which wasn't send and calculate
@@ -143,6 +167,12 @@ class AverageUpdater(BufferedUpdater):
         BufferedUpdater.__init__(self, channel, updateInterval)
         raise NotImplementedError("Not implemented yet")
 
+    def handleAvailableData(self, measurement):
+        pass
+
+    def resolveUpdateResult(self, result):
+        pass
+
 class OnChangeUpdater(BaseUpdater):
     """
     Send every value change.
@@ -152,3 +182,9 @@ class OnChangeUpdater(BaseUpdater):
         BaseUpdater.__init__(self, channel)
         self.changeBuffer = []
         raise NotImplementedError("Not implemented yet")
+
+    def handleAvailableData(self, measurement):
+        pass
+
+    def resolveUpdateResult(self, result):
+        pass
