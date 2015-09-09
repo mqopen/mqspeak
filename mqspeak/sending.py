@@ -57,23 +57,31 @@ class ChannelUpdateDispatcher:
         updater.notifyUpdateResult(returnCode)
 
     def run(self):
+        """
+        Start update dispatcher main loop.
+        """
         self.running = True
         while self.running:
             self.dispatchLock.acquire()
+
             # check for stop() method call
             if not self.running:
                 return
+
             # start send thread
             (channel, measurement, resultNotify) = self.updateQueue.popleft()
             self.dispatch(channel, measurement, resultNotify)
 
     def stop(self):
+        """
+        Stop dispatcher thread.
+        """
         self.running = False
         self.dispatchLock.release()
 
     def dispatch(self, channel, measurement, updater):
         """
-        Dispatch new ThingSpeak update thread
+        Dispatch new ThingSpeak update thread.
 
         channel: updated channel
         measurement: update data
@@ -143,7 +151,7 @@ class ThingSpeakSender:
 
 class SendRunner:
     """
-    Callable wrapper class for sending data to ThingSpeak in separae thread.
+    Callable wrapper class for sending data to ThingSpeak in separate thread.
     """
 
     def __init__(self, sender, channel, measurement, updater, jobNotify):

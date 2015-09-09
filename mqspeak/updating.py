@@ -131,6 +131,7 @@ class BufferedUpdater(TimeBasedUpdater):
     def __init__(self, channel, updateInterval):
         TimeBasedUpdater.__init__(self, channel, updateInterval)
         self.scheduler = sched.scheduler(time.time, time.sleep)
+        raise NotImplementedError("Not implemented yet")
 
 class AverageUpdater(BufferedUpdater):
     """
@@ -140,6 +141,7 @@ class AverageUpdater(BufferedUpdater):
 
     def __init__(self, channel, updateInterval):
         BufferedUpdater.__init__(self, channel, updateInterval)
+        raise NotImplementedError("Not implemented yet")
 
 class OnChangeUpdater(BaseUpdater):
     """
@@ -149,3 +151,4 @@ class OnChangeUpdater(BaseUpdater):
     def __init__(self, channel):
         BaseUpdater.__init__(self, channel)
         self.changeBuffer = []
+        raise NotImplementedError("Not implemented yet")
