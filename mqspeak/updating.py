@@ -117,7 +117,7 @@ class TimeBasedUpdater(BaseUpdater):
 
     def isUpdateIntervalExpired(self):
         """
-        true if update interval has expired, flase otherwise
+        True if update interval has expired, False otherwise.
         """
         return (datetime.datetime.now() - self.lastUpdated) > self.updateInterval
 
@@ -149,13 +149,74 @@ class BufferedUpdater(TimeBasedUpdater):
     def __init__(self, channel, updateInterval):
         TimeBasedUpdater.__init__(self, channel, updateInterval)
         self.scheduler = sched.scheduler(time.time, time.sleep)
-        raise NotImplementedError("Not implemented yet")
+        self.resetBuffer()
+        self.isUpdateScheduled = False
+
+        # Mutual exclusion for measurement buffer.
+        self.bufferLock = threading.Semaphore(1)
+
+        # Mutual exclusion for isUpdateScheduled flag.
+        self.scheduleLock = threading.Semaphore(1)
 
     def handleAvailableData(self, measurement):
-        pass
+        self.scheduleLock.acquire()
+        if not self.isUpdateScheduled:
+            if self.isUpdateIntervalExpired() and not self.isUpdateRunning:
+                self.runUpdate(measurement)
+            else:
+                # New data is available but update is still running.
+                # Store data in buffer and schedule new update after current update is done
+                self.updateBuffer(measurement)
+        else:
+            self.updateBuffer(measurement)
+        self.scheduleLock.release()
 
     def resolveUpdateResult(self, result):
-        pass
+        TimeBasedUpdater.resolveUpdateResult(self, result)
+        if self.isDataBuffered():
+            self.isUpdateScheduled = True
+            self.scheduler.enter(self.updateInterval.total_seconds(), 1, self.onSchedule)
+
+    def resetBuffer(self):
+        """
+        Reset last stored measurement.
+        """
+        self.measurement = None
+
+    def updateBuffer(self, measurement):
+        """
+        Update buffered measurement.
+        """
+        self.bufferLock.acquire()
+        self.measurement = measurement
+        self.bufferLock.release()
+
+    def isDataBuffered(self):
+        """
+        True if some measurement is buffered, Flase otherwise.
+        """
+        return self.measurement is not None
+
+    def pullMeasurement(self):
+        """
+        Atomically get buferred measurement and clear buffer.
+        """
+        d = None
+        self.bufferLock.acquire()
+        d = self.measurement
+        self.resetBuffer()
+        self.bufferLock.release()
+        return d
+
+    def onSchedule(self):
+        """
+        Callback method called when scheduler expires.
+        """
+        self.scheduleLock.acquire()
+        data = self.pullMeasurement()
+        self.isUpdateScheduled = False
+        self.runUpdate(data)
+        self.scheduleLock.release()
 
 class AverageUpdater(BufferedUpdater):
     """
