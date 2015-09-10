@@ -14,9 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-import sched
 import threading
 import time
+import queue
 
 class ChannnelUpdateSupervisor:
     """
@@ -43,6 +43,13 @@ class ChannnelUpdateSupervisor:
         """
         for updater in self.channelUpdaterMapping.values():
             updater.setDispatcher(dispatcher)
+
+    def stop(self):
+        """
+        Stop execution of all updaters.
+        """
+        for updater in self.channelUpdaterMapping.values():
+            updater.stop()
 
 class BaseUpdater:
     """
@@ -105,6 +112,11 @@ class BaseUpdater:
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
+    def stop(self):
+        """
+        Override this method if updater manage some other running thread.
+        """
+
 class TimeBasedUpdater(BaseUpdater):
     """
     Shared logic for all updaters based on periodic updating.
@@ -152,8 +164,6 @@ class BufferedUpdater(TimeBasedUpdater):
     after time expires.
     """
 
-    SCHEDULER_PRIORITY = 1
-
     def __init__(self, channel, updateInterval):
         TimeBasedUpdater.__init__(self, channel, updateInterval)
         self.resetBuffer()
@@ -164,6 +174,8 @@ class BufferedUpdater(TimeBasedUpdater):
 
         # Mutual exclusion for isUpdateScheduled flag.
         self.scheduleLock = threading.Semaphore(1)
+
+        self.executors = set()
 
     def handleAvailableData(self, measurement):
         self.scheduleLock.acquire()
@@ -224,11 +236,12 @@ class BufferedUpdater(TimeBasedUpdater):
         self.bufferLock.release()
         return d
 
-    def onSchedule(self):
+    def onSchedule(self, executor):
         """
         Callback method called when scheduler expires.
         """
         self.scheduleLock.acquire()
+        self.executors.discard(executor)
         self.isUpdateScheduled = False
         data = self.pullMeasurement()
 
@@ -239,15 +252,18 @@ class BufferedUpdater(TimeBasedUpdater):
     def scheduleUpdateJob(self):
         """
         Schedule new update job.
-
-        returns: scheduler executor object
         """
         self.isUpdateScheduled = True
         executor = SchedulerExecutor(
             int(self.updateInterval.total_seconds()),
             self.onSchedule)
         threading.Thread(target=executor).start()
-        return executor
+        self.executors.add(executor)
+
+    def stop(self):
+        for executor in self.executors:
+            executor.stop()
+        self.executors = set()
 
 class AverageUpdater(BufferedUpdater):
     """
@@ -286,17 +302,24 @@ class SchedulerExecutor:
     Execute scheduler object in separate thread.
     """
 
-    SCHEDULER_PRIORITY = 1
-
     def __init__(self, scheduleTime, action):
-        self.scheduler = sched.scheduler(time.time, time.sleep)
-        self.event = self.scheduler.enter(scheduleTime, SchedulerExecutor.SCHEDULER_PRIORITY, action)
+        """
+        Initiate scheduler executor.
+
+        scheduleTime: time in seconds
+        action: callable object executed after schedule time expires
+        """
+        self.event = threading.Event()
+        self.scheduleTime = scheduleTime
+        self.action = action
 
     def __call__(self):
-        self.scheduler.run()
+        scheduleEspires = not self.event.wait(self.scheduleTime)
+        if scheduleEspires:
+            self.action(self)
 
     def stop(self):
         """
         Stop scheduler execution.
         """
-        self.scheduler.cancel(self.event)
+        self.event.set()

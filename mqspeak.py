@@ -44,6 +44,7 @@ def main():
     except KeyboardInterrupt as ex:
 
         # program exit
+        channelUpdateSupervisor.stop()
         brokerManager.stop()
         updateDispatcher.stop()
 
