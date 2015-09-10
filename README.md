@@ -104,7 +104,7 @@ Each channel section has to define `Key`, `UpdateRate` and `UpdateType` options.
   - `blackout` - Until `UpdateRate` interval is expired, any incoming data are
     ignored. First data received after interval expiration are sent to ThingSpeak.
   - `buffered` - Incoming data are buffered during `UpdateRate` interval. After
-    this interval expires, most recent values are immediately sent. **_Not implemented yet._**
+    this interval expires, most recent values are immediately sent.
   - `average` - Similar to `buffered` but mqspeak calculates average value of these
     data. Any data which cannot be converted into real numbers are ignored. Channel
     is immediately updated after `UpdateRate` interval is expired. **_Not implemented yet._**

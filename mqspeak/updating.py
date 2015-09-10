@@ -207,12 +207,11 @@ class BufferedUpdater(TimeBasedUpdater):
 
     def resolveUpdateResult(self, result):
         TimeBasedUpdater.resolveUpdateResult(self, result)
-        self.bufferLock.acquire()
-        if self.isDataBuffered():
-            self.scheduleLock.acquire()
-            self.scheduleUpdateJob()
-            self.scheduleLock.release()
-        self.bufferLock.release()
+        # Schedule new update job. Just for case that new data arrive before time
+        # interval expires.
+        self.scheduleLock.acquire()
+        self.scheduleUpdateJob()
+        self.scheduleLock.release()
 
     def resetBuffer(self):
         """
@@ -251,9 +250,10 @@ class BufferedUpdater(TimeBasedUpdater):
         """
         self.scheduleLock.acquire()
         self.executors.discard(executor)
-        self.isUpdateScheduled = False
-        data = self.pullMeasurement()
-        self.runUpdateLocked(data)
+        if self.isUpdateScheduled:
+            self.isUpdateScheduled = False
+            data = self.pullMeasurement()
+            self.runUpdateLocked(data)
         self.scheduleLock.release()
 
     def scheduleUpdateJob(self):
