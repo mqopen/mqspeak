@@ -243,12 +243,9 @@ class BufferedUpdater(TimeBasedUpdater):
         returns: scheduler executor object
         """
         self.isUpdateScheduled = True
-        scheduler = sched.scheduler(time.time, time.sleep)
-        scheduler.enter(
+        executor = SchedulerExecutor(
             int(self.updateInterval.total_seconds()),
-            BufferedUpdater.SCHEDULER_PRIORITY,
             self.onSchedule)
-        executor = SchedulerExecutor(scheduler)
         threading.Thread(target=executor).start()
         return executor
 
@@ -289,8 +286,11 @@ class SchedulerExecutor:
     Execute scheduler object in separate thread.
     """
 
-    def __init__(self, scheduler):
-        self.scheduler = scheduler
+    SCHEDULER_PRIORITY = 1
+
+    def __init__(self, scheduleTime, action):
+        self.scheduler = sched.scheduler(time.time, time.sleep)
+        self.event = self.scheduler.enter(scheduleTime, SchedulerExecutor.SCHEDULER_PRIORITY, action)
 
     def __call__(self):
         self.scheduler.run()
@@ -299,4 +299,4 @@ class SchedulerExecutor:
         """
         Stop scheduler execution.
         """
-        raise NotImplementedError("Not implemented yet")
+        self.scheduler.cancel(self.event)
