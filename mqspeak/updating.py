@@ -175,6 +175,7 @@ class BufferedUpdater(TimeBasedUpdater):
         # Mutual exclusion for isUpdateScheduled flag.
         self.scheduleLock = threading.Semaphore(1)
 
+        # TODO: Check race conditions with this set.
         self.executors = set()
 
     def handleAvailableData(self, measurement):
@@ -314,8 +315,8 @@ class SchedulerExecutor:
         self.action = action
 
     def __call__(self):
-        scheduleEspires = not self.event.wait(self.scheduleTime)
-        if scheduleEspires:
+        scheduleExpires = not self.event.wait(self.scheduleTime)
+        if scheduleExpires:
             self.action(self)
 
     def stop(self):
