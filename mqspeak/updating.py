@@ -95,6 +95,14 @@ class BaseUpdater:
         self.isUpdateRunning = True
         self.dispatcher.updateAvailable(self.channel, measurement, self)
 
+    def runUpdateLocked(self, measurement):
+        """
+        Run update. This method avoids race conditions.
+        """
+        self.updateLock.acquire()
+        self.runUpdate(measurement)
+        self.updateLock.release()
+
     def notifyUpdateResult(self, result):
         """
         Callback method with update result
@@ -245,9 +253,7 @@ class BufferedUpdater(TimeBasedUpdater):
         self.executors.discard(executor)
         self.isUpdateScheduled = False
         data = self.pullMeasurement()
-
-        # TODO: runUpdate race condition
-        self.runUpdate(data)
+        self.runUpdateLocked(data)
         self.scheduleLock.release()
 
     def scheduleUpdateJob(self):
