@@ -106,9 +106,15 @@ class BaseUpdater:
         raise NotImplementedError("Override this mehod in sub-class")
 
 class TimeBasedUpdater(BaseUpdater):
+    """
+    Shared logic for all updaters based on periodic updating.
+    """
 
     def __init__(self, channel, updateInterval):
         """
+        Initiate time based updater base object.
+
+        channel: updated channel
         updateInterval: timedelta object
         """
         BaseUpdater.__init__(self, channel)
@@ -146,9 +152,10 @@ class BufferedUpdater(TimeBasedUpdater):
     after time expires.
     """
 
+    SCHEDULER_PRIORITY = 1
+
     def __init__(self, channel, updateInterval):
         TimeBasedUpdater.__init__(self, channel, updateInterval)
-        self.scheduler = sched.scheduler(time.time, time.sleep)
         self.resetBuffer()
         self.isUpdateScheduled = False
 
@@ -161,21 +168,30 @@ class BufferedUpdater(TimeBasedUpdater):
     def handleAvailableData(self, measurement):
         self.scheduleLock.acquire()
         if not self.isUpdateScheduled:
-            if self.isUpdateIntervalExpired() and not self.isUpdateRunning:
-                self.runUpdate(measurement)
-            else:
+            if self.isUpdateRunning:
                 # New data is available but update is still running.
-                # Store data in buffer and schedule new update after current update is done
+                # Store data in buffer and schedule new update after current update is done.
                 self.updateBuffer(measurement)
+            elif not self.isUpdateIntervalExpired():
+                # No update is currently running but no update is scheduled.
+                # Store data in buffer and schedule an update.
+                self.updateBuffer(measurement)
+                self.scheduleUpdateJob()
+            else:
+                self.runUpdate(measurement)
         else:
+            # Update job is already scheduled. Just update buffer.
             self.updateBuffer(measurement)
         self.scheduleLock.release()
 
     def resolveUpdateResult(self, result):
         TimeBasedUpdater.resolveUpdateResult(self, result)
+        self.bufferLock.acquire()
         if self.isDataBuffered():
-            self.isUpdateScheduled = True
-            self.scheduler.enter(self.updateInterval.total_seconds(), 1, self.onSchedule)
+            self.scheduleLock.acquire()
+            self.scheduleUpdateJob()
+            self.scheduleLock.release()
+        self.bufferLock.release()
 
     def resetBuffer(self):
         """
@@ -213,10 +229,28 @@ class BufferedUpdater(TimeBasedUpdater):
         Callback method called when scheduler expires.
         """
         self.scheduleLock.acquire()
-        data = self.pullMeasurement()
         self.isUpdateScheduled = False
+        data = self.pullMeasurement()
+
+        # TODO: runUpdate race condition
         self.runUpdate(data)
         self.scheduleLock.release()
+
+    def scheduleUpdateJob(self):
+        """
+        Schedule new update job.
+
+        returns: scheduler executor object
+        """
+        self.isUpdateScheduled = True
+        scheduler = sched.scheduler(time.time, time.sleep)
+        scheduler.enter(
+            int(self.updateInterval.total_seconds()),
+            BufferedUpdater.SCHEDULER_PRIORITY,
+            self.onSchedule)
+        executor = SchedulerExecutor(scheduler)
+        threading.Thread(target=executor).start()
+        return executor
 
 class AverageUpdater(BufferedUpdater):
     """
@@ -249,3 +283,20 @@ class OnChangeUpdater(BaseUpdater):
 
     def resolveUpdateResult(self, result):
         pass
+
+class SchedulerExecutor:
+    """
+    Execute scheduler object in separate thread.
+    """
+
+    def __init__(self, scheduler):
+        self.scheduler = scheduler
+
+    def __call__(self):
+        self.scheduler.run()
+
+    def stop(self):
+        """
+        Stop scheduler execution.
+        """
+        raise NotImplementedError("Not implemented yet")
