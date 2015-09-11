@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from mqspeak.data import Measurement
 import datetime
 import threading
 import time
@@ -224,8 +225,11 @@ class BufferedUpdater(TimeBasedUpdater):
         Update buffered measurement.
         """
         self.bufferLock.acquire()
-        self.measurement = measurement
+        self.storeUpdateData(measurement)
         self.bufferLock.release()
+
+    def storeUpdateData(self, measurement):
+        self.measurement = measurement
 
     def isDataBuffered(self):
         """
@@ -280,13 +284,54 @@ class AverageUpdater(BufferedUpdater):
 
     def __init__(self, channel, updateInterval):
         BufferedUpdater.__init__(self, channel, updateInterval)
+        self.clearIntervalMeasurements()
         raise NotImplementedError("Not implemented yet")
 
-    def handleAvailableData(self, measurement):
-        pass
+    def storeUpdateData(self, measurement):
+        """
+        Save measurement in local buffer.
+        """
+        if self.isAllMeasurementValuesValid(measurement):
+            self.intervalMeasurements.append(measurement)
+        # TODO: log error
 
-    def resolveUpdateResult(self, result):
-        pass
+    def isDataBuffered(self):
+        """
+        True if some measurement is buffered, Flase otherwise.
+        """
+        return len(self.intervalMeasurements) > 0
+
+    def clearIntervalMeasurements(self):
+        """
+        Discard all measurements collected during update interval period.
+        """
+        self.intervalMeasurements = []
+
+    def createAverageMeasurement(self):
+        """
+        Create measurement from collected data during update interval period.
+        """
+        averageData = {}
+        for measurement in self.intervalMeasurements:
+            for dataIdentifier, value in measurement.fields:
+                if dataIdentifier not in averageData:
+                    averageData[dataIdentifier] = 0
+                averageData[dataIdentifier] += value
+        for dataIdentifier, value in averageData:
+            averageData[dataIdentifier] = averageData[dataIdentifier] / float(len(self.intervalMeasurements))
+        lastTime = self.intervalMeasurements[-1]
+        return Measurement(averageData, lastTime)
+
+    def isAllMeasurementValuesValid(self, measurement):
+        """
+        Check if all measurement data can be converted to floating point numbers.
+        """
+        for dataIdentifier, value in measurement.fields:
+            try:
+                float(value)
+            except ValueError as ex:
+                return False
+        return True
 
 class OnChangeUpdater(BaseUpdater):
     """
