@@ -157,30 +157,6 @@ class SynchronousUpdater(BaseUpdater):
 
     def __init__(self, channel, updateInterval):
         BaseUpdater.__init__(self, channel, updateInterval)
-
-        # Mutual exclusion for measurement buffer.
-        self.bufferLock = threading.Semaphore(1)
-
-        # Mutual exclusion for isUpdateScheduled flag.
-        self.scheduleLock = threading.Semaphore(1)
-
-        # TODO: Check race conditions with this set.
-        self.executors = set()
-
-    def resetBuffer(self):
-        raise NotImplementedError("Override this mehod in sub-class")
-
-    def storeUpdateData(self, measurement):
-        raise NotImplementedError("Override this mehod in sub-class")
-
-class BufferedUpdater(BaseUpdater):
-    """
-    Implement some timer to send update is time elapses. Don't wait for incoming data
-    after time expires.
-    """
-
-    def __init__(self, channel, updateInterval):
-        BaseUpdater.__init__(self, channel, updateInterval)
         self.resetBuffer()
         self.isUpdateScheduled = False
 
@@ -192,6 +168,17 @@ class BufferedUpdater(BaseUpdater):
 
         # TODO: Check race conditions with this set.
         self.executors = set()
+
+    def pullMeasurement(self):
+        """
+        Atomically get buferred measurement and clear buffer.
+        """
+        d = None
+        self.bufferLock.acquire()
+        d = self.measurement
+        self.resetBuffer()
+        self.bufferLock.release()
+        return d
 
     def handleAvailableData(self, measurement):
         self.scheduleLock.acquire()
@@ -220,12 +207,6 @@ class BufferedUpdater(BaseUpdater):
         self.scheduleUpdateJob()
         self.scheduleLock.release()
 
-    def resetBuffer(self):
-        """
-        Reset last stored measurement.
-        """
-        self.measurement = None
-
     def updateBuffer(self, measurement):
         """
         Update buffered measurement.
@@ -234,25 +215,16 @@ class BufferedUpdater(BaseUpdater):
         self.storeUpdateData(measurement)
         self.bufferLock.release()
 
-    def storeUpdateData(self, measurement):
-        self.measurement = measurement
-
-    def isDataBuffered(self):
+    def scheduleUpdateJob(self):
         """
-        True if some measurement is buffered, Flase otherwise.
+        Schedule new update job.
         """
-        return self.measurement is not None
-
-    def pullMeasurement(self):
-        """
-        Atomically get buferred measurement and clear buffer.
-        """
-        d = None
-        self.bufferLock.acquire()
-        d = self.measurement
-        self.resetBuffer()
-        self.bufferLock.release()
-        return d
+        self.isUpdateScheduled = True
+        executor = SchedulerExecutor(
+            int(self.updateInterval.total_seconds()),
+            self.onSchedule)
+        threading.Thread(target=executor).start()
+        self.executors.add(executor)
 
     def onSchedule(self, executor):
         """
@@ -266,21 +238,40 @@ class BufferedUpdater(BaseUpdater):
             self.runUpdateLocked(data)
         self.scheduleLock.release()
 
-    def scheduleUpdateJob(self):
-        """
-        Schedule new update job.
-        """
-        self.isUpdateScheduled = True
-        executor = SchedulerExecutor(
-            int(self.updateInterval.total_seconds()),
-            self.onSchedule)
-        threading.Thread(target=executor).start()
-        self.executors.add(executor)
-
     def stop(self):
         for executor in self.executors:
             executor.stop()
         self.executors = set()
+
+    def resetBuffer(self):
+        raise NotImplementedError("Override this mehod in sub-class")
+
+    def storeUpdateData(self, measurement):
+        raise NotImplementedError("Override this mehod in sub-class")
+
+    def isDataBuffered(self):
+        raise NotImplementedError("Override this mehod in sub-class")
+
+class BufferedUpdater(SynchronousUpdater):
+    """
+    Implement some timer to send update is time elapses. Don't wait for incoming data
+    after time expires.
+    """
+
+    def resetBuffer(self):
+        """
+        Reset last stored measurement.
+        """
+        self.measurement = None
+
+    def storeUpdateData(self, measurement):
+        self.measurement = measurement
+
+    def isDataBuffered(self):
+        """
+        True if some measurement is buffered, Flase otherwise.
+        """
+        return self.measurement is not None
 
 class AverageUpdater(BufferedUpdater):
     """
