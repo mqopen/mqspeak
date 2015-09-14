@@ -57,12 +57,14 @@ class BaseUpdater:
     Updater object base class
     """
 
-    def __init__(self, channel):
+    def __init__(self, channel, updateInterval):
         """
         channel: updated channel
         """
         self.channel = channel
+        self.updateInterval = updateInterval
         self.isUpdateRunning = False
+        self.lastUpdated = datetime.datetime.min
         self.updateLock = threading.Semaphore(1)
 
     def setDispatcher(self, dispatcher):
@@ -126,22 +128,6 @@ class BaseUpdater:
         Override this method if updater manage some other running thread.
         """
 
-class TimeBasedUpdater(BaseUpdater):
-    """
-    Shared logic for all updaters based on periodic updating.
-    """
-
-    def __init__(self, channel, updateInterval):
-        """
-        Initiate time based updater base object.
-
-        channel: updated channel
-        updateInterval: timedelta object
-        """
-        BaseUpdater.__init__(self, channel)
-        self.updateInterval = updateInterval
-        self.lastUpdated = datetime.datetime.min
-
     def isUpdateIntervalExpired(self):
         """
         True if update interval has expired, False otherwise.
@@ -151,30 +137,50 @@ class TimeBasedUpdater(BaseUpdater):
     def resolveUpdateResult(self, result):
         self.lastUpdated = datetime.datetime.now()
 
-class BlackoutUpdater(TimeBasedUpdater):
+class BlackoutUpdater(BaseUpdater):
     """
     Ignore any incomming data during blackkout period. Send first data after this
     period expires.
     """
 
     def __init__(self, channel, updateInterval):
-        TimeBasedUpdater.__init__(self, channel, updateInterval)
+        BaseUpdater.__init__(self, channel, updateInterval)
 
     def handleAvailableData(self, measurement):
         if self.isUpdateIntervalExpired() and not self.isUpdateRunning:
             self.runUpdate(measurement)
 
     def resolveUpdateResult(self, result):
-        TimeBasedUpdater.resolveUpdateResult(self, result)
+        BaseUpdater.resolveUpdateResult(self, result)
 
-class BufferedUpdater(TimeBasedUpdater):
+class SynchronousUpdater(BaseUpdater):
+
+    def __init__(self, channel, updateInterval):
+        BaseUpdater.__init__(self, channel, updateInterval)
+
+        # Mutual exclusion for measurement buffer.
+        self.bufferLock = threading.Semaphore(1)
+
+        # Mutual exclusion for isUpdateScheduled flag.
+        self.scheduleLock = threading.Semaphore(1)
+
+        # TODO: Check race conditions with this set.
+        self.executors = set()
+
+    def resetBuffer(self):
+        raise NotImplementedError("Override this mehod in sub-class")
+
+    def storeUpdateData(self, measurement):
+        raise NotImplementedError("Override this mehod in sub-class")
+
+class BufferedUpdater(BaseUpdater):
     """
     Implement some timer to send update is time elapses. Don't wait for incoming data
     after time expires.
     """
 
     def __init__(self, channel, updateInterval):
-        TimeBasedUpdater.__init__(self, channel, updateInterval)
+        BaseUpdater.__init__(self, channel, updateInterval)
         self.resetBuffer()
         self.isUpdateScheduled = False
 
@@ -207,7 +213,7 @@ class BufferedUpdater(TimeBasedUpdater):
         self.scheduleLock.release()
 
     def resolveUpdateResult(self, result):
-        TimeBasedUpdater.resolveUpdateResult(self, result)
+        BaseUpdater.resolveUpdateResult(self, result)
         # Schedule new update job. Just for case that new data arrive before time
         # interval expires.
         self.scheduleLock.acquire()
@@ -297,7 +303,7 @@ class AverageUpdater(BufferedUpdater):
 
     def isDataBuffered(self):
         """
-        True if some measurement is buffered, Flase otherwise.
+        True if some measurement is buffered, False otherwise.
         """
         return len(self.intervalMeasurements) > 0
 
