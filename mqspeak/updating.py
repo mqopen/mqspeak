@@ -105,6 +105,9 @@ class BaseUpdater:
         """
         self.updateLock.acquire()
         self.isUpdateRunning = False
+        # TODO: Result can indicate that update failed. In that case update interval counter
+        #       can't be restarted.
+        self.restartUpdateIntervalCounter()
         self.resolveUpdateResult(result)
         self.updateLock.release()
 
@@ -119,7 +122,7 @@ class BaseUpdater:
         """
         return (datetime.datetime.now() - self.lastUpdated) > self.updateInterval
 
-    def resolveUpdateResult(self, result):
+    def restartUpdateIntervalCounter(self):
         self.lastUpdated = datetime.datetime.now()
 
     def handleAvailableData(self, measurement):
