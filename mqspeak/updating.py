@@ -170,17 +170,6 @@ class SynchronousUpdater(BaseUpdater):
         # TODO: Check race conditions with this set.
         self.executors = set()
 
-    def pullMeasurement(self):
-        """
-        Atomically get buferred measurement and clear buffer.
-        """
-        d = None
-        self.bufferLock.acquire()
-        d = self.getMeasurement()
-        self.resetBuffer()
-        self.bufferLock.release()
-        return d
-
     def handleAvailableData(self, measurement):
         self.scheduleLock.acquire()
         if not self.isUpdateScheduled:
@@ -188,11 +177,6 @@ class SynchronousUpdater(BaseUpdater):
                 # New data is available but update is still running.
                 # Store data in buffer and schedule new update after current update is done.
                 self.updateBuffer(measurement)
-            elif not self.isUpdateIntervalExpired():
-                # No update is currently running but no update is scheduled.
-                # Store data in buffer and schedule an update.
-                self.updateBuffer(measurement)
-                self.scheduleUpdateJob()
             else:
                 self.runUpdate(measurement)
         else:
@@ -238,6 +222,17 @@ class SynchronousUpdater(BaseUpdater):
             data = self.pullMeasurement()
             self.runUpdateLocked(data)
         self.scheduleLock.release()
+
+    def pullMeasurement(self):
+        """
+        Atomically get buferred measurement and clear buffer.
+        """
+        d = None
+        self.bufferLock.acquire()
+        d = self.getMeasurement()
+        self.resetBuffer()
+        self.bufferLock.release()
+        return d
 
     def stop(self):
         for executor in self.executors:
