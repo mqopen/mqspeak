@@ -175,7 +175,7 @@ class SynchronousUpdater(BaseUpdater):
         """
         d = None
         self.bufferLock.acquire()
-        d = self.measurement
+        d = self.getMeasurement()
         self.resetBuffer()
         self.bufferLock.release()
         return d
@@ -252,6 +252,9 @@ class SynchronousUpdater(BaseUpdater):
     def isDataBuffered(self):
         raise NotImplementedError("Override this mehod in sub-class")
 
+    def getMeasurement(self):
+        raise NotImplementedError("Override this mehod in sub-class")
+
 class BufferedUpdater(SynchronousUpdater):
     """
     Implement some timer to send update is time elapses. Don't wait for incoming data
@@ -272,6 +275,9 @@ class BufferedUpdater(SynchronousUpdater):
         True if some measurement is buffered, Flase otherwise.
         """
         return self.measurement is not None
+
+    def getMeasurement(self):
+        return self.measurement
 
 class AverageUpdater(BufferedUpdater):
     """
@@ -297,6 +303,9 @@ class AverageUpdater(BufferedUpdater):
         True if some measurement is buffered, False otherwise.
         """
         return len(self.intervalMeasurements) > 0
+
+    def getMeasurement(self):
+        return self.createAverageMeasurement()
 
     def clearIntervalMeasurements(self):
         """
