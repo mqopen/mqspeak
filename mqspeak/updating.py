@@ -244,15 +244,27 @@ class SynchronousUpdater(BaseUpdater):
         self.executors = set()
 
     def resetBuffer(self):
+        """
+        Clear internal buffer with measurements.
+        """
         raise NotImplementedError("Override this mehod in sub-class")
 
     def storeUpdateData(self, measurement):
+        """
+        Save new measurement.
+        """
         raise NotImplementedError("Override this mehod in sub-class")
 
     def isDataBuffered(self):
+        """
+        Check if there are some stored measurements.
+        """
         raise NotImplementedError("Override this mehod in sub-class")
 
     def getMeasurement(self):
+        """
+        Get stored measurement.
+        """
         raise NotImplementedError("Override this mehod in sub-class")
 
 class BufferedUpdater(SynchronousUpdater):
