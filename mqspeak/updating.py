@@ -83,14 +83,6 @@ class BaseUpdater:
         self.handleAvailableData(measurement)
         self.updateLock.release()
 
-    def handleAvailableData(self, measurement):
-        """
-        Handle new data in updater.
-
-        measurement: new data measurement
-        """
-        raise NotImplementedError("Override this mehod in sub-class")
-
     def runUpdate(self, measurement):
         """
         Call this method in sub-class from handleAvailableData method.
@@ -100,7 +92,8 @@ class BaseUpdater:
 
     def runUpdateLocked(self, measurement):
         """
-        Run update. This method avoids race conditions.
+        Run update. This method avoids race conditions. Do not call this method from handleAvailableData()
+        metod - causes dead lock.
         """
         self.updateLock.acquire()
         self.runUpdate(measurement)
@@ -115,14 +108,6 @@ class BaseUpdater:
         self.resolveUpdateResult(result)
         self.updateLock.release()
 
-    def resolveUpdateResult(self, result):
-        """
-        Resolve update result in updater.
-
-        result: TODO
-        """
-        raise NotImplementedError("Override this mehod in sub-class")
-
     def stop(self):
         """
         Override this method if updater manage some other running thread.
@@ -136,6 +121,22 @@ class BaseUpdater:
 
     def resolveUpdateResult(self, result):
         self.lastUpdated = datetime.datetime.now()
+
+    def handleAvailableData(self, measurement):
+        """
+        Handle new data in updater.
+
+        measurement: new data measurement
+        """
+        raise NotImplementedError("Override this mehod in sub-class")
+
+    def resolveUpdateResult(self, result):
+        """
+        Resolve update result in updater.
+
+        result: TODO
+        """
+        raise NotImplementedError("Override this mehod in sub-class")
 
 class BlackoutUpdater(BaseUpdater):
     """
