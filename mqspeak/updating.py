@@ -18,6 +18,7 @@ import datetime
 import threading
 import time
 import queue
+import sys
 
 class ChannnelUpdateSupervisor:
     """
@@ -102,6 +103,8 @@ class BaseUpdater:
     def notifyUpdateResult(self, result):
         """
         Callback method with update result
+
+        result: TODO
         """
         self.updateLock.acquire()
         self.isUpdateRunning = False
@@ -307,7 +310,8 @@ class AverageUpdater(BufferedUpdater):
         """
         if self.isAllMeasurementValuesValid(measurement):
             self.intervalMeasurements.append(measurement)
-        # TODO: log error
+        else:
+            print("Can't convert all measured values to numbers: {0}".format(measurement), file=sys.stderr)
 
     def isDataBuffered(self):
         """
