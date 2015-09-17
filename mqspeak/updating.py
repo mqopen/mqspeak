@@ -108,9 +108,8 @@ class BaseUpdater:
         """
         self.updateLock.acquire()
         self.isUpdateRunning = False
-        # TODO: Result can indicate that update failed. In that case update interval counter
-        #       can't be restarted.
-        self.restartUpdateIntervalCounter()
+        if result.wasSuccessful():
+            self.restartUpdateIntervalCounter()
         self.resolveUpdateResult(result)
         self.updateLock.release()
 

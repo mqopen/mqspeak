@@ -135,19 +135,21 @@ class ThingSpeakSender:
             if System.verbose:
                 print("Channel {0} response: {1} {2}: {3}".format(channel, status, reason, data))
             result = (status, reason, data)
-            self._checkSendResult(result)
-            return result
+            success = self._checkSendResult(result)
+            return UpdateResult(succes)
         except BaseException as ex:
             print("Send exception: {0}".format(ex), file = sys.stderr)
-            return None
+            return UpdateResult(False)
 
     def _checkSendResult(self, result):
         (status, reason, data) = result
         if status != 200:
             print("Response status error: {0} {1} - {2}.".format(status, reason, data), file = sys.stderr)
+            return False
         elif data == "0":
             print("Data send error: ThingSpeak responded with return code 0.", file = sys.stderr)
-
+            return False
+        return True
 
 class SendRunner:
     """
@@ -156,8 +158,7 @@ class SendRunner:
 
     def __init__(self, sender, channel, measurement, updater, jobNotify):
         """
-        sender: sender object. This object must implement send(channel,  measurement) member
-            method.
+        sender: sender object. This object must implement send(channel,  measurement) method.
         channel: channel description object
         measurement: measured data
         updater: updater object which will be called by dispatcher after send job is done
@@ -178,3 +179,19 @@ class SendRunner:
             self.jobNotify.sendJobDone(result)
         except Exception as ex:
             self.jobNotify.sendJobDone(ex)
+
+class UpdateResult:
+    """
+    Encapsulate update result.
+    """
+
+    def __init__(self, succes):
+        """
+        Initiate update result.
+
+        succes: indicate if update was successful or not
+        """
+        self.succes = succes
+
+    def wasSuccessful(self):
+        return self.succes
