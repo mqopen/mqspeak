@@ -104,7 +104,7 @@ class BaseUpdater:
         """
         Callback method with update result
 
-        result: TODO
+        result: UpdateResult object
         """
         self.updateLock.acquire()
         self.isUpdateRunning = False
@@ -139,7 +139,7 @@ class BaseUpdater:
         """
         Resolve update result in updater.
 
-        result: TODO
+        result: UpdateResult object
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
@@ -160,6 +160,9 @@ class BlackoutUpdater(BaseUpdater):
         BaseUpdater.resolveUpdateResult(self, result)
 
 class SynchronousUpdater(BaseUpdater):
+    """
+    Base class for all updaters which tries to update channel in synchronous fashion.
+    """
 
     def __init__(self, channel, updateInterval):
         BaseUpdater.__init__(self, channel, updateInterval)
