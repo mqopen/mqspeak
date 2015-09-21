@@ -278,24 +278,18 @@ class BufferedUpdater(SynchronousUpdater):
     """
 
     def resetBuffer(self):
-        """
-        Reset last stored measurement.
-        """
         self.measurement = None
 
     def storeUpdateData(self, measurement):
         self.measurement = measurement
 
     def isDataBuffered(self):
-        """
-        True if some measurement is buffered, Flase otherwise.
-        """
         return self.measurement is not None
 
     def getMeasurement(self):
         return self.measurement
 
-class AverageUpdater(BufferedUpdater):
+class AverageUpdater(SynchronousUpdater):
     """
     Like BufferedUpdater but keep track all data which wasn't send and calculate
     average value while sending them.
@@ -303,7 +297,7 @@ class AverageUpdater(BufferedUpdater):
 
     def __init__(self, channel, updateInterval):
         BufferedUpdater.__init__(self, channel, updateInterval)
-        self.clearIntervalMeasurements()
+        self.resetBuffer()
         raise NotImplementedError("Not implemented yet")
 
     def storeUpdateData(self, measurement):
@@ -315,6 +309,9 @@ class AverageUpdater(BufferedUpdater):
         else:
             print("Can't convert all measured values to numbers: {0}".format(measurement), file=sys.stderr)
 
+    def resetBuffer(self):
+        self.intervalMeasurements = []
+
     def isDataBuffered(self):
         """
         True if some measurement is buffered, False otherwise.
@@ -323,12 +320,6 @@ class AverageUpdater(BufferedUpdater):
 
     def getMeasurement(self):
         return self.createAverageMeasurement()
-
-    def clearIntervalMeasurements(self):
-        """
-        Discard all measurements collected during update interval period.
-        """
-        self.intervalMeasurements = []
 
     def createAverageMeasurement(self):
         """
