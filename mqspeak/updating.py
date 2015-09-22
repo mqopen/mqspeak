@@ -193,7 +193,6 @@ class SynchronousUpdater(BaseUpdater):
         self.scheduleLock.release()
 
     def resolveUpdateResult(self, result):
-        BaseUpdater.resolveUpdateResult(self, result)
         # Schedule new update job. Just for case that new data arrive before time
         # interval expires.
         self.scheduleLock.acquire()
