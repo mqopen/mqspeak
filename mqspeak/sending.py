@@ -136,7 +136,7 @@ class ThingSpeakSender:
                 print("Channel {0} response: {1} {2}: {3}".format(channel, status, reason, data))
             result = (status, reason, data)
             success = self._checkSendResult(result)
-            return UpdateResult(succes)
+            return UpdateResult(success)
         except BaseException as ex:
             print("Send exception: {0}".format(ex), file = sys.stderr)
             return UpdateResult(False)
@@ -185,13 +185,13 @@ class UpdateResult:
     Encapsulate update result.
     """
 
-    def __init__(self, succes):
+    def __init__(self, success):
         """
         Initiate update result.
 
-        succes: indicate if update was successful or not
+        success: indicate if update was successful or not
         """
-        self.succes = succes
+        self.success = success
 
     def wasSuccessful(self):
-        return self.succes
+        return self.success
