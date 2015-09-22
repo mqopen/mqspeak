@@ -295,9 +295,8 @@ class AverageUpdater(SynchronousUpdater):
     """
 
     def __init__(self, channel, updateInterval):
-        BufferedUpdater.__init__(self, channel, updateInterval)
+        SynchronousUpdater.__init__(self, channel, updateInterval)
         self.resetBuffer()
-        raise NotImplementedError("Not implemented yet")
 
     def storeUpdateData(self, measurement):
         """
@@ -326,11 +325,11 @@ class AverageUpdater(SynchronousUpdater):
         """
         averageData = {}
         for measurement in self.intervalMeasurements:
-            for dataIdentifier, value in measurement.fields:
+            for dataIdentifier, value in measurement.fields.items():
                 if dataIdentifier not in averageData:
                     averageData[dataIdentifier] = 0
-                averageData[dataIdentifier] += value
-        for dataIdentifier, value in averageData:
+                averageData[dataIdentifier] += float(value)
+        for dataIdentifier, value in averageData.items():
             averageData[dataIdentifier] = averageData[dataIdentifier] / float(len(self.intervalMeasurements))
         lastTime = self.intervalMeasurements[-1]
         return Measurement(averageData, lastTime)
@@ -339,7 +338,7 @@ class AverageUpdater(SynchronousUpdater):
         """
         Check if all measurement data can be converted to floating point numbers.
         """
-        for dataIdentifier, value in measurement.fields:
+        for dataIdentifier, value in measurement.fields.items():
             try:
                 float(value)
             except ValueError as ex:
