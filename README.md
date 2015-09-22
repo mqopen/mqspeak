@@ -107,7 +107,7 @@ Each channel section has to define `Key`, `UpdateRate` and `UpdateType` options.
     this interval expires, most recent values are immediately sent.
   - `average` - Similar to `buffered` but mqspeak calculates average value of these
     data. Any data which cannot be converted into real numbers are ignored. Channel
-    is immediately updated after `UpdateRate` interval is expired. **_Not implemented yet._**
+    is immediately updated after `UpdateRate` interval is expired.
   - `onchange` - Data are marked with timestamp and stored in queue. Each item is
     sent after `UpdateRate` interval expires. **_Not implemented yet._**
 - `Field1` ... `Field8` - ThingSpeak field updates. This value contains space separated
