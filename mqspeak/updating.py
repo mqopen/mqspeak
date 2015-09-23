@@ -294,10 +294,6 @@ class AverageUpdater(SynchronousUpdater):
     average value while sending them.
     """
 
-    def __init__(self, channel, updateInterval):
-        SynchronousUpdater.__init__(self, channel, updateInterval)
-        self.resetBuffer()
-
     def storeUpdateData(self, measurement):
         """
         Save measurement in local buffer.
@@ -311,9 +307,6 @@ class AverageUpdater(SynchronousUpdater):
         self.intervalMeasurements = []
 
     def isDataBuffered(self):
-        """
-        True if some measurement is buffered, False otherwise.
-        """
         return len(self.intervalMeasurements) > 0
 
     def getMeasurement(self):
