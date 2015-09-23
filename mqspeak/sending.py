@@ -110,8 +110,7 @@ class ThingSpeakSender:
 
     def send(self, channel,  measurement):
         """
-        Send measurement to ThinkSpeak and return set with results:
-        (responseStatus, responseReason, responseData)
+        Send measurement to ThinkSpeak.
         """
         try:
             status, reason, responseBytes = self.fetch(channel, measurement)
