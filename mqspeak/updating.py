@@ -213,7 +213,7 @@ class SynchronousUpdater(BaseUpdater):
         """
         self.isUpdateScheduled = True
         executor = SchedulerExecutor(
-            int(self.updateInterval.total_seconds()),
+            datetime.timedelta(seconds=int(self.updateInterval.total_seconds())),
             self.onSchedule)
         threading.Thread(target=executor).start()
         self.executors.add(executor)
@@ -363,15 +363,16 @@ class SchedulerExecutor:
         """
         Initiate scheduler executor.
 
-        scheduleTime: time in seconds
-        action: callable object executed after schedule time expires
+        scheduleTime: timedelta object
+        action: Callable object executed after schedule time expires. Action takes one argument,
+            which is reference to this executor.
         """
         self.event = threading.Event()
         self.scheduleTime = scheduleTime
         self.action = action
 
     def __call__(self):
-        scheduleExpires = not self.event.wait(self.scheduleTime)
+        scheduleExpires = not self.event.wait(self.scheduleTime.total_seconds())
         if scheduleExpires:
             self.action(self)
 
