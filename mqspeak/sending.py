@@ -114,37 +114,42 @@ class ThingSpeakSender:
         (responseStatus, responseReason, responseData)
         """
         try:
-            params = self.channelConvertMapping[channel].convert(measurement)
-            params.update({'api_key': channel.apiKey})
-            conn = http.client.HTTPSConnection("api.thingspeak.com")
-            conn.request("POST", "/update", urllib.parse.urlencode(params))
-            response = conn.getresponse()
-
-            # catch UnicodeDecodeError when some mess is received
-            data = None
-            responseRaw = response.read()
-            try:
-                data = responseRaw.decode("utf-8")
-            except UnicodeError as ex:
-                print("Can't decode response data: {0}".format(responseRaw), file=sys.stderr)
-                data = "<Decode error>"
-            conn.close()
-            status = response.status
-            reason = response.reason
-
+            status, reason, responseBytes = self.fetch(channel, measurement)
+            response = self.decodeResponseData(responseBytes)
             if System.verbose:
-                print("Channel {0} response: {1} {2}: {3}".format(channel, status, reason, data))
-            result = (status, reason, data)
+                print("Channel {} response: {} {}: {}".format(channel, status, reason, response))
+            result = (status, reason, response)
             success = self._checkSendResult(result)
             return UpdateResult(success)
         except BaseException as ex:
-            print("Send exception: {0}".format(ex), file = sys.stderr)
+            print("Send exception: {}".format(ex), file = sys.stderr)
             return UpdateResult(False)
+
+    def fetch(self, channel, measurement):
+        params = self.channelConvertMapping[channel].convert(measurement)
+        params.update({'api_key': channel.apiKey})
+        conn = http.client.HTTPSConnection("api.thingspeak.com")
+        conn.request("POST", "/update", urllib.parse.urlencode(params))
+        response = conn.getresponse()
+        status = response.status
+        reason = response.reason
+        responseBytes = response.read()
+        conn.close()
+        return status, reason, responseBytes
+
+    def decodeResponseData(self, responseBytes):
+        data = None
+        try:
+            data = responseBytes.decode("utf-8")
+        except UnicodeError as ex:
+            print("Can't decode response data: {}".format(responseBytes), file=sys.stderr)
+            data = "<Decode error>"
+        return data
 
     def _checkSendResult(self, result):
         (status, reason, data) = result
         if status != 200:
-            print("Response status error: {0} {1} - {2}.".format(status, reason, data), file = sys.stderr)
+            print("Response status error: {} {} - {}.".format(status, reason, data), file = sys.stderr)
             return False
         elif data == "0":
             print("Data send error: ThingSpeak responded with return code 0.", file = sys.stderr)
