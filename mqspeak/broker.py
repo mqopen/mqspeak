@@ -54,4 +54,7 @@ class Broker:
         return hash((self.name, self.host, self.port))
 
     def __str__(self):
-        return "<{0} - {1}:{2}>".format(self.name, self.host, self.port)
+        return "{} - {}:{}".format(self.name, self.host, self.port)
+
+    def __repr__(self):
+        return "<{}>".format(self.__str__())

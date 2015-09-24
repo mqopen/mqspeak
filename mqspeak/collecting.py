@@ -67,7 +67,7 @@ class UpdateBuffer:
         throws TopicException: if unnessesary topic is updated
         """
         if dataIdentifier not in self.dataDict:
-            raise TopicException("Illegal topic update: {0}".format(dataIdentifier))
+            raise TopicException("Illegal topic update: {}".format(dataIdentifier))
         else:
             self.dataDict[dataIdentifier] = value
 

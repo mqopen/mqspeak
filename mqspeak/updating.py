@@ -301,7 +301,7 @@ class AverageUpdater(SynchronousUpdater):
         if self.isAllMeasurementValuesValid(measurement):
             self.intervalMeasurements.append(measurement)
         else:
-            print("Can't convert all measured values to numbers: {0}".format(measurement), file=sys.stderr)
+            print("Can't convert all measured values to numbers: {}".format(measurement), file=sys.stderr)
 
     def resetBuffer(self):
         self.intervalMeasurements = []

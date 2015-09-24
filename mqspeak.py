@@ -23,6 +23,7 @@ from mqspeak.updating import ChannnelUpdateSupervisor
 
 def main():
     System.initialize()
+    return
 
     # Channel update dispatcher object
     channelConvertMapping = System.getChannelConvertMapping()

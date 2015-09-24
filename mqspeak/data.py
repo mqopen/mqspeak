@@ -27,7 +27,7 @@ class Measurement:
         throws AttributeError: if length of fields is greater than 8
         """
         if len(fields) > 8:
-            raise AttributeError("Fields must be up to length 8, {0} given".format(len(fields)))
+            raise AttributeError("Fields must be up to length 8, {} given".format(len(fields)))
         self.fields = fields
         self.time = time
 
@@ -41,10 +41,10 @@ class Measurement:
         return cls(fields, datetime.datetime.now())
 
     def __str__(self):
-        return "[{0}] {1}".format(self.time, self.fields)
+        return "[{}] {}".format(self.time, self.fields)
 
     def __repr__(self):
-        return "<{0}>".format(self.__str__())
+        return "<{}>".format(self.__str__())
 
     def __len__(self):
         return len(self.fields)
@@ -72,7 +72,7 @@ class MeasurementParamConverter:
         return params
 
     def __str__(self):
-        return "<Param Converter: {0}>".format(str(self.dataFieldsMapping))
+        return "<Param Converter: {}>".format(str(self.dataFieldsMapping))
 
     def __repr__(self):
         return self.__str__()
@@ -90,7 +90,7 @@ class DataIdentifier:
         return hash((self.broker, self.topic))
 
     def __str__(self):
-        return "<{0}: {1}>".format(self.broker, self.topic)
+        return "<{}: {}>".format(self.broker, self.topic)
 
     def __repr__(self):
         return self.__str__()

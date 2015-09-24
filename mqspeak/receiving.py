@@ -94,7 +94,7 @@ class BrokerReceiver:
         """
         The callback for when the client receives a CONNACK response from the server.
         """
-        print("{0}: [{1}] {2}.".format(self._createClientIdentificationString(), rc, self._getClientConnectionStatus(rc)))
+        print("{}: [{}] {}.".format(self._createClientIdentificationString(), rc, self._getClientConnectionStatus(rc)))
         for sub in self.subsciption:
             (result, mid) = self.client.subscribe(sub)
 
@@ -102,7 +102,7 @@ class BrokerReceiver:
         """
         Callback when client is disconnected.
         """
-        print("Client dicsconnect: {0}".format(rc))
+        print("Client dicsconnect: {}".format(rc))
 
     def onMessage(self, client, userdata, msg):
         """
@@ -113,7 +113,7 @@ class BrokerReceiver:
             data = msg.payload.decode("utf-8")
             self.dataCollector.onNewData(dataID, data)
         except UnicodeError as ex:
-            print("Can't decode received message payload: {0}".format(msg.payload), file=sys.stderr)
+            print("Can't decode received message payload: {}".format(msg.payload), file=sys.stderr)
 
     def onSubscribe(self, client, userdata, mid, granted_qos):
         """
@@ -130,7 +130,7 @@ class BrokerReceiver:
         Logging messages.
         """
         if System.verbose:
-            print("{0}: [{1}] {2}".format(self._createClientIdentificationString(), level, buf))
+            print("{}: [{}] {}".format(self._createClientIdentificationString(), level, buf))
 
     def stop(self):
         """
@@ -152,10 +152,10 @@ class BrokerReceiver:
         elif rc == 5:
             return "Connection refused - not authorised"
         else:
-            return "Unknown return code: {0}".format(rc)
+            return "Unknown return code: {}".format(rc)
 
     def _createClientIdentificationString(self):
-        return "{0} ({1} [{2}:{3}])".format(self.clientID, self.broker.name, self.broker.host, self.broker.port)
+        return "{} ({} [{}:{}])".format(self.clientID, self.broker.name, self.broker.host, self.broker.port)
 
 class BrokerReceiverID:
     """
@@ -175,10 +175,10 @@ class BrokerReceiverID:
         self.receiverID = receiverID
 
     def __str__(self):
-        return "mqspeak-{0}-{1}-{2}".format(self.hostname, self.pid, self.receiverID)
+        return "mqspeak-{}-{}-{}".format(self.hostname, self.pid, self.receiverID)
 
     def __repr__(self):
-        return "<{0}>".format(self.__str__())
+        return "<{}>".format(self.__str__())
 
 class BrokerReceiverIDManager:
     """
