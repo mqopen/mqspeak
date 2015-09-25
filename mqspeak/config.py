@@ -41,8 +41,11 @@ class ProgramConfig:
         configCache = ConfigCache()
         for broker, subscribtions in self.getBrokers():
             configCache.addBroker(broker, subscribtions)
-        for channel, updater, updateMapping in self.getChannels():
+        for channel, updaterFactory, updateMappingFactory in self.getChannels():
+            updater = updaterFactory.build(channel)
+            updateMapping = updateMappingFactory.build(configCache)
             configCache.addChannel(channel, updater, updateMapping)
+        return configCache
 
     def checkForMandatorySections(self):
         self._checkForSectionList(["Brokers", "Channels"])
@@ -111,16 +114,16 @@ class ProgramConfig:
         updaterArgs = None
         if updaterName == "blackout":
             updaterCls = BlackoutUpdater
-            updaterArgs = updateRate
+            updaterArgs = (updateRate,)
         elif updaterName == "buffered":
             updaterCls = BufferedUpdater
-            updaterArgs = updateRate
+            updaterArgs = (updateRate,)
         elif updaterName == "average":
             updaterCls = AverageUpdater
-            updaterArgs = updateRate
+            updaterArgs = (updateRate,)
         elif updaterName == "onchange":
             updaterCls = OnChangeUpdater
-            updaterArgs = updateRate
+            updaterArgs = (updateRate,)
         else:
             raise ConfigException("Unknown UpdateType: {}".format(updaterName))
         return ChannelUpdaterFactory(updaterCls, updaterArgs)
@@ -157,9 +160,14 @@ class ConfigCache:
     Cache object for storing app configuration.
     """
 
+    def __init__(self):
+        self.listenDescriptors = []
+
     def addBroker(self, broker, subscribtions):
         """
         """
+        listenDescriptor = (broker, subscribtions)
+        self.listenDescriptors.append(listenDescriptor)
 
     def addChannel(self, channel, updater, updateMapping):
         """
@@ -179,7 +187,7 @@ class ConfigCache:
 
         raises KeyError if the name don't match to any stored broker object.
         """
-        for broker in self.brokers:
+        for broker, subscribtions in self.listenDescriptors:
             if brokerName == broker.name:
                 return broker
         raise KeyError("Unknown broker name: {}".format(brokerName))
@@ -198,10 +206,19 @@ class UpdateMappingFactory:
         self.mapping = {}
 
     def addMapping(self, brokerName, topic, field):
-        self.mapping[(brokerName, topic)] = field
+        self.mapping[brokerName] = (topic, field)
 
-    def build(self, broker):
-        pass
+    def getNeededBrokers(self):
+        return list(self.mapping.keys())
+
+    def build(self, brokerNameResolver):
+        mapping = {}
+        for brokerName in self.mapping.keys():
+            topic, field = self.mapping[brokerName]
+            broker = brokerNameResolver.getBrokerByName(brokerName)
+            dataIdentifier = DataIdentifier(broker, topic)
+            mapping[dataIdentifier] = field
+        return mapping
 
 class ConfigException(Exception):
     """
