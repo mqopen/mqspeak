@@ -14,9 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from mqspeak.collecting import UpdateBuffer
-from mqspeak.config import ProgramConfig
+from mqspeak.config import ProgramConfig, ConfigException
 from mqspeak.data import MeasurementParamConverter
 from mqspeak import args
+import sys
 
 class System:
     """
@@ -32,7 +33,11 @@ class System:
         cls.cliArgs = args.parse_args()
         config = ProgramConfig(cls.cliArgs.config)
         # TODO: handle config exceptions
-        cls.configCache = config.parse()
+        try:
+            cls.configCache = config.parse()
+        except ConfigException as ex:
+            print("Configuration error: {}".format(ex), file=sys.stderr)
+            exit(1)
 
         cls.verbose = cls.cliArgs.verbose
 

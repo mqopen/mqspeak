@@ -62,15 +62,18 @@ class ProgramConfig:
             yield broker, subscribtions
 
     def createBroker(self, brokerSection):
-        self.checkForOptionList(brokerSection, ["Topic"])
-        options = self.parser.options(brokerSection)
-        broker = Broker(brokerSection,
-                        self.parser.get(brokerSection, "Host", fallback = "127.0.0.1"),
-                        self.parser.getint(brokerSection, "Port", fallback = 1883))
-        if "user" in options or "password" in options:
-            (user, password) = self.getBrokerCredentials(brokerSection)
-            broker.setCredentials(user, password)
-        return broker
+        try:
+            self.checkForOptionList(brokerSection, ["Topic"])
+            options = self.parser.options(brokerSection)
+            host = self.parser.get(brokerSection, "Host", fallback = "127.0.0.1")
+            port = self.parser.getint(brokerSection, "Port", fallback = 1883)
+            broker = Broker(brokerSection, host, port)
+            if "user" in options or "password" in options:
+                (user, password) = self.getBrokerCredentials(brokerSection)
+                broker.setCredentials(user, password)
+            return broker
+        except ValueError as ex:
+            raise ConfigException("Invalid broker port number: {}".format(self.parser.get(brokerSection, "Port")))
 
     def getBrokerCredentials(self, brokerSection):
         user = None
@@ -108,10 +111,13 @@ class ProgramConfig:
         return Channel(channelSection, writeKey)
 
     def getChannelUpdater(self, channelSection):
-        updateRate = datetime.timedelta(seconds = self.parser.getint(channelSection, "UpdateRate"))
-        updaterName = self.parser.get(channelSection, "UpdateType")
-        updaterCls, updaterArgs = self.createUpdaterFactory(updaterName, updateRate)
-        return ChannelUpdaterFactory(updaterCls, updaterArgs)
+        try:
+            updateRate = datetime.timedelta(seconds = self.parser.getint(channelSection, "UpdateRate"))
+            updaterName = self.parser.get(channelSection, "UpdateType")
+            updaterCls, updaterArgs = self.createUpdaterFactory(updaterName, updateRate)
+            return ChannelUpdaterFactory(updaterCls, updaterArgs)
+        except ValueError as ex:
+            raise ConfigException("Invalid update rate interval: {}".format(self.parser.get(channelSection, "UpdateRate")))
 
     def createUpdaterFactory(self, updaterName, updateRate):
         updaterCls = None
@@ -192,7 +198,7 @@ class ConfigCache:
         for broker, subscribtions in self.listenDescriptors:
             if brokerName == broker.name:
                 return broker
-        raise KeyError("Unknown broker name: {}".format(brokerName))
+        raise ConfigException("Unknown broker name: {}".format(brokerName))
 
 class ChannelUpdaterFactory:
     def __init__(self, updaterCls, updaterArgs):
