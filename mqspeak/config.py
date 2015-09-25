@@ -48,21 +48,21 @@ class ProgramConfig:
         return configCache
 
     def checkForMandatorySections(self):
-        self._checkForSectionList(["Brokers", "Channels"])
+        self.checkForSectionList(["Brokers", "Channels"])
 
     def getBrokers(self):
         """
         Get list of enabled brokers.
         """
         brokerSections = self.parser.get("Brokers", "Enabled").split()
-        self._checkForSectionList(brokerSections)
+        self.checkForSectionList(brokerSections)
         for brokerSection in brokerSections:
             broker = self.createBroker(brokerSection)
             subscribtions = self.getBrokerSubscribtions(brokerSection)
             yield broker, subscribtions
 
     def createBroker(self, brokerSection):
-        self._checkForOptionList(brokerSection, ["Topic"])
+        self.checkForOptionList(brokerSection, ["Topic"])
         options = self.parser.options(brokerSection)
         broker = Broker(brokerSection,
                         self.parser.get(brokerSection, "Host", fallback = "127.0.0.1"),
@@ -96,7 +96,7 @@ class ProgramConfig:
         Create list of enable channels.
         """
         channelSections = self.parser.get("Channels", "Enabled").split()
-        self._checkForSectionList(channelSections)
+        self.checkForSectionList(channelSections)
         for channelSection in channelSections:
             channel = self.createChannel(channelSection)
             updaterFactory = self.getChannelUpdater(channelSection)
@@ -110,23 +110,23 @@ class ProgramConfig:
     def getChannelUpdater(self, channelSection):
         updateRate = datetime.timedelta(seconds = self.parser.getint(channelSection, "UpdateRate"))
         updaterName = self.parser.get(channelSection, "UpdateType")
+        updaterCls, updaterArgs = self.createUpdaterFactory(updaterName, updateRate)
+        return ChannelUpdaterFactory(updaterCls, updaterArgs)
+
+    def createUpdaterFactory(self, updaterName, updateRate):
         updaterCls = None
-        updaterArgs = None
         if updaterName == "blackout":
             updaterCls = BlackoutUpdater
-            updaterArgs = (updateRate,)
         elif updaterName == "buffered":
             updaterCls = BufferedUpdater
-            updaterArgs = (updateRate,)
         elif updaterName == "average":
             updaterCls = AverageUpdater
-            updaterArgs = (updateRate,)
         elif updaterName == "onchange":
             updaterCls = OnChangeUpdater
-            updaterArgs = (updateRate,)
         else:
             raise ConfigException("Unknown UpdateType: {}".format(updaterName))
-        return ChannelUpdaterFactory(updaterCls, updaterArgs)
+        updaterArgs = (updateRate,)
+        return updaterCls, updaterArgs
 
     def getDataFieldMapping(self, channelSection):
         updateMappingFactory = UpdateMappingFactory(channelSection)
@@ -139,19 +139,19 @@ class ProgramConfig:
                 updateMappingFactory.addMapping(brokerName, topic, mappingOption.lower())
         return updateMappingFactory
 
-    def _checkForSectionList(self, sectionList):
+    def checkForSectionList(self, sectionList):
         for section in sectionList:
-            self._checkForSection(section)
+            self.checkForSection(section)
 
-    def _checkForSection(self, section):
+    def checkForSection(self, section):
         if not self.parser.has_section(section):
             raise ConfigException("{} section is missing".format(section))
 
-    def _checkForOptionList(self, section, optionList):
+    def checkForOptionList(self, section, optionList):
         for option in optionList:
-            self._checkForOption(section, option)
+            self.checkForOption(section, option)
 
-    def _checkForOption(self, section, option):
+    def checkForOption(self, section, option):
         if not self.parser.has_option(section, option):
             raise ConfigException("Section {}: {} option is missing".format(section, option))
 
@@ -162,6 +162,7 @@ class ConfigCache:
 
     def __init__(self):
         self.listenDescriptors = []
+        self.channelUpdateDescribtors = []
 
     def addBroker(self, broker, subscribtions):
         """
@@ -173,7 +174,8 @@ class ConfigCache:
         """
         raises: ConfigException when update mapping contains unknown broker
         """
-        print("{} : {} : {}".format(channel, updater, updateMapping))
+        channelUpdateDescribtor = (channel, updater, updateMapping)
+        self.channelUpdateDescribtors.append(channelUpdateDescribtor)
 
     def check(self):
         """
