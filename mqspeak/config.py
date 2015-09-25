@@ -135,7 +135,7 @@ class ProgramConfig:
         return updaterCls, updaterArgs
 
     def getDataFieldMapping(self, channelSection):
-        updateMappingFactory = UpdateMappingFactory(channelSection)
+        updateMappingFactory = UpdateMappingFactory()
         for mappingOption in ["Field1", "Field2", "Field3", "Field4", "Field5", "Field6", "Field7", "Field8"]:
             if self.parser.has_option(channelSection, mappingOption):
                 optionValue = self.parser.get(channelSection, mappingOption).split()
@@ -209,12 +209,16 @@ class ChannelUpdaterFactory:
         return self.updaterCls(channel, *self.updaterArgs)
 
 class UpdateMappingFactory:
-    def __init__(self, channelName):
-        self.channelName = channelName
+    def __init__(self):
         self.mapping = {}
 
     def addMapping(self, brokerName, topic, field):
-        self.mapping[brokerName] = (topic, field)
+        self.checkNewBrokerName(brokerName)
+        self.mapping[brokerName].append((topic, field))
+
+    def checkNewBrokerName(self, brokerName):
+        if brokerName not in self.mapping:
+            self.mapping[brokerName] = []
 
     def getNeededBrokers(self):
         return list(self.mapping.keys())
@@ -222,10 +226,10 @@ class UpdateMappingFactory:
     def build(self, brokerNameResolver):
         mapping = {}
         for brokerName in self.mapping.keys():
-            topic, field = self.mapping[brokerName]
             broker = brokerNameResolver.getBrokerByName(brokerName)
-            dataIdentifier = DataIdentifier(broker, topic)
-            mapping[dataIdentifier] = field
+            for topic, field in self.mapping[brokerName]:
+                dataIdentifier = DataIdentifier(broker, topic)
+                mapping[dataIdentifier] = field
         return mapping
 
 class ConfigException(Exception):
