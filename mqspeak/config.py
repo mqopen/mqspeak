@@ -134,7 +134,7 @@ class ProgramConfig:
             if self.parser.has_option(channelSection, mappingOption):
                 optionValue = self.parser.get(channelSection, mappingOption).split()
                 if len(optionValue) < 2:
-                    raise ConfigException("{0}: {1} - option must contain two space separated values".format(channelSection, mappingOption))
+                    raise ConfigException("{}: {} - option must contain two space separated values".format(channelSection, mappingOption))
                 brokerName, topic = optionValue
                 updateMappingFactory.addMapping(brokerName, topic, mappingOption.lower())
         return updateMappingFactory

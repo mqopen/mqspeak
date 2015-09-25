@@ -30,8 +30,9 @@ class System:
         Initiate system configuration.
         """
         cls.cliArgs = args.parse_args()
-        cls.config = ProgramConfig(cls.cliArgs.config)
-        cls.config.parse()
+        config = ProgramConfig(cls.cliArgs.config)
+        # TODO: handle config exceptions
+        cls.configCache = config.parse()
 
         cls.verbose = cls.cliArgs.verbose
 
@@ -43,8 +44,8 @@ class System:
         {channel: channelParamConverter}
         """
         channelConvertMapping = {}
-        for channel in cls.config.channels:
-            channelConvertMapping[channel] = MeasurementParamConverter(cls.config.getDataFieldMapping(channel))
+        for channel, _, updateMapping in cls.configCache.channelUpdateDescribtors:
+            channelConvertMapping[channel] = MeasurementParamConverter(updateMapping)
         return channelConvertMapping
 
     @classmethod
@@ -52,12 +53,7 @@ class System:
         """
         Get list of tuples (broker, ["subscribeTopic"])
         """
-        listenDescriptors = []
-        for broker in cls.config.brokers:
-            subscribeTopic = cls.config.getBrokerSubscribtions(broker)
-            listenDescriptor = (broker, subscribeTopic)
-            listenDescriptors.append(listenDescriptor)
-        return listenDescriptors
+        return cls.configCache.listenDescriptors
 
     @classmethod
     def getUpdateBuffers(cls):
@@ -65,17 +61,11 @@ class System:
         Get list of UpdateBuffer instances.
         """
         updateBuffers = []
-        for channel in cls.config.channels:
-            updateBuffers.append(cls.getUpdateBuffer(channel))
+        for channel, _, updateMapping in cls.configCache.channelUpdateDescribtors:
+            dataIdentifiers = list(updateMapping.keys())
+            updateBuffer = UpdateBuffer(channel, dataIdentifiers)
+            updateBuffers.append(updateBuffer)
         return updateBuffers
-
-    @classmethod
-    def getUpdateBuffer(cls, channel):
-        """
-        Get list of UpdateBuffer for particular channel
-        """
-        dataIdentifiers = list(cls.config.getDataFieldMapping(channel).keys())
-        return UpdateBuffer(channel, dataIdentifiers)
 
     @classmethod
     def getChannelUpdateMapping(cls):
@@ -83,6 +73,6 @@ class System:
         Get mapping {channel: updater}
         """
         channelUpdateMapping = {}
-        for channel in cls.config.channels:
-            channelUpdateMapping[channel] = cls.config.getChannelUpdater(channel)
+        for channel, updater, _ in cls.configCache.channelUpdateDescribtors:
+            channelUpdateMapping[channel] = updater
         return channelUpdateMapping
