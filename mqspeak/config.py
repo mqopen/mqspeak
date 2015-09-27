@@ -135,14 +135,18 @@ class ProgramConfig:
         return updaterCls, updaterArgs
 
     def getDataFieldMapping(self, channelSection):
+        # TODO: check for section
+        updaterSection = self.parser.get(channelSection, "UpdateFields")
+        return self.createDataFieldMapping(updaterSection)
+
+    def createDataFieldMapping(self, updateSection):
         updateMappingFactory = UpdateMappingFactory()
-        for mappingOption in ["Field1", "Field2", "Field3", "Field4", "Field5", "Field6", "Field7", "Field8"]:
-            if self.parser.has_option(channelSection, mappingOption):
-                optionValue = self.parser.get(channelSection, mappingOption).split()
-                if len(optionValue) < 2:
-                    raise ConfigException("{}: {} - option must contain two space separated values".format(channelSection, mappingOption))
-                brokerName, topic = optionValue
-                updateMappingFactory.addMapping(brokerName, topic, mappingOption.lower())
+        for mappingOption in self.parser.options(updateSection):
+            optionValue = self.parser.get(updateSection, mappingOption).split()
+            if len(optionValue) < 2:
+                    raise ConfigException("{}: {} - option must contain two space separated values".format(updateSection, mappingOption))
+            brokerName, topic = optionValue
+            updateMappingFactory.addMapping(brokerName, topic, mappingOption)
         return updateMappingFactory
 
     def checkForSectionList(self, sectionList):
