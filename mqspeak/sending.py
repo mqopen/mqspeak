@@ -141,7 +141,7 @@ class ThingSpeakSender(BaseSender):
     def fetch(self, channel, measurement):
         body = self.channelConvertMapping[channel].convert(measurement)
         body.update({'api_key': channel.apiKey})
-        bodyEncoded = urllib.parse.urlencode(params)
+        bodyEncoded = urllib.parse.urlencode(body)
         conn = http.client.HTTPSConnection("api.thingspeak.com")
         conn.request("POST", "/update", bodyEncoded)
         response = conn.getresponse()
