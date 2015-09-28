@@ -20,27 +20,27 @@ import sys
 import threading
 import urllib.parse
 from mqspeak.system import System
+from mqspeak.channel import ChannelType
 
 class ChannelUpdateDispatcher:
     """
     Dispatching new update threads.
     """
 
-    def __init__(self, sender):
+    def __init__(self, channelConvertMapping):
         """
-        sender: sender object
+        channelConvertMapping: mapping {channel: channelParamConverter}
         """
-        self.sender = sender
+        self.channelSenders = self.createChannelSenders(channelConvertMapping)
         self.dispatchLock = threading.Semaphore(0)
         self.running = False
         self.updateQueue = collections.deque()
 
-    @classmethod
-    def createThingSpeakUpdateDispatcher(cls, channelConvertMapping):
-        """
-        channelConvertMapping: mapping {channel: channelParamConverter}
-        """
-        return cls(ThingSpeakSender(channelConvertMapping))
+    def createChannelSenders(self, channelConvertMapping):
+        channelSenders = {}
+        channelSenders[ChannelType.thingspeak] = ThingSpeakSender(channelConvertMapping)
+        channelSenders[ChannelType.phant] = PhantSender(channelConvertMapping)
+        return channelSenders
 
     def updateAvailable(self, channel, measurement, resultNotify):
         """
@@ -89,17 +89,16 @@ class ChannelUpdateDispatcher:
         """
         sendThread = threading.Thread(
             target = SendRunner(
-                self.sender,
+                self.channelSenders[channel.channelType],
                 channel,
                 measurement,
                 updater,
                 self))
         sendThread.start()
 
-class ThingSpeakSender:
+class BaseSender:
     """
-    Class for sending data to ThingSpeak. This class send measurements to URL api.thingspeak.com
-    using HTTPS method. It also parses send result and checks if transfer was successful.
+    Sender base class.
     """
 
     def __init__(self, channelConvertMapping):
@@ -118,23 +117,11 @@ class ThingSpeakSender:
             if System.verbose:
                 print("Channel {} response: {} {}: {}".format(channel, status, reason, response))
             result = (status, reason, response)
-            success = self._checkSendResult(result)
+            success = self.checkSendResult(result)
             return UpdateResult(success)
         except BaseException as ex:
             print("Send exception: {}".format(ex), file = sys.stderr)
             return UpdateResult(False)
-
-    def fetch(self, channel, measurement):
-        params = self.channelConvertMapping[channel].convert(measurement)
-        params.update({'api_key': channel.apiKey})
-        conn = http.client.HTTPSConnection("api.thingspeak.com")
-        conn.request("POST", "/update", urllib.parse.urlencode(params))
-        response = conn.getresponse()
-        status = response.status
-        reason = response.reason
-        responseBytes = response.read()
-        conn.close()
-        return status, reason, responseBytes
 
     def decodeResponseData(self, responseBytes):
         data = None
@@ -145,7 +132,26 @@ class ThingSpeakSender:
             data = "<Decode error>"
         return data
 
-    def _checkSendResult(self, result):
+class ThingSpeakSender(BaseSender):
+    """
+    Class for sending data to ThingSpeak. This class send measurements to URL api.thingspeak.com
+    using HTTPS method. It also parses send result and checks if transfer was successful.
+    """
+
+    def fetch(self, channel, measurement):
+        body = self.channelConvertMapping[channel].convert(measurement)
+        body.update({'api_key': channel.apiKey})
+        bodyEncoded = urllib.parse.urlencode(params)
+        conn = http.client.HTTPSConnection("api.thingspeak.com")
+        conn.request("POST", "/update", bodyEncoded)
+        response = conn.getresponse()
+        status = response.status
+        reason = response.reason
+        responseBytes = response.read()
+        conn.close()
+        return status, reason, responseBytes
+
+    def checkSendResult(self, result):
         (status, reason, data) = result
         if status != 200:
             print("Response status error: {} {} - {}.".format(status, reason, data), file = sys.stderr)
@@ -153,6 +159,29 @@ class ThingSpeakSender:
         elif data == "0":
             print("Data send error: ThingSpeak responded with return code 0.", file = sys.stderr)
             return False
+        return True
+
+class PhantSender(BaseSender):
+
+    def __init__(self, channelConvertMapping):
+        self.channelConvertMapping = channelConvertMapping
+
+    def fetch(self, channel, measurement):
+        body = self.channelConvertMapping[channel].convert(measurement)
+        bodyEncoded = urllib.parse.urlencode(body)
+        headers = {"Phant-Private-Key": channel.apiKey,
+                    "Content-Type": "application/x-www-form-urlencoded"}
+        conn = http.client.HTTPConnection("data.sparkfun.com")
+        conn.request("POST", "/input/{}".format(channel.channelID), bodyEncoded, headers=headers)
+        response = conn.getresponse()
+        status = response.status
+        reason = response.reason
+        responseBytes = response.read()
+        conn.close()
+        return status, reason, responseBytes
+
+    def checkSendResult(self, result):
+        (status, reason, data) = result
         return True
 
 class SendRunner:

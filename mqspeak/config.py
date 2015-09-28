@@ -16,7 +16,7 @@
 import configparser
 import datetime
 from mqspeak.broker import Broker
-from mqspeak.channel import Channel
+from mqspeak.channel import ThingSpeakChannel, PhantChannel
 from mqspeak.data import DataIdentifier
 from mqspeak.updating import BlackoutUpdater, BufferedUpdater, AverageUpdater, OnChangeUpdater
 
@@ -107,8 +107,15 @@ class ProgramConfig:
             yield channel, updaterFactory, updateMappingFactory
 
     def createChannel(self, channelSection):
+        channelID = self.parser.get(channelSection, "Id", fallback = None)
         writeKey = self.parser.get(channelSection, "Key")
-        return Channel(channelSection, writeKey)
+        channelType = self.parser.get(channelSection, "Type")
+        if channelType == "thingspeak":
+            return ThingSpeakChannel(channelSection, channelID, writeKey)
+        elif channelType == "phant":
+            return PhantChannel(channelSection, channelID, writeKey)
+        else:
+            raise ConfigException("Unsupported channel type: {}".format(channelType))
 
     def getChannelUpdater(self, channelSection):
         try:

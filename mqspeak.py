@@ -26,7 +26,7 @@ def main():
 
     # Channel update dispatcher object
     channelConvertMapping = System.getChannelConvertMapping()
-    updateDispatcher = ChannelUpdateDispatcher.createThingSpeakUpdateDispatcher(channelConvertMapping)
+    updateDispatcher = ChannelUpdateDispatcher(channelConvertMapping)
 
     channelUpdateSupervisor = ChannnelUpdateSupervisor(System.getChannelUpdateMapping())
     channelUpdateSupervisor.setDispatcher(updateDispatcher)
