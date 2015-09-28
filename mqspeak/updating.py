@@ -149,9 +149,6 @@ class BlackoutUpdater(BaseUpdater):
     period expires.
     """
 
-    def __init__(self, channel, updateInterval):
-        BaseUpdater.__init__(self, channel, updateInterval)
-
     def handleAvailableData(self, measurement):
         if self.isUpdateIntervalExpired() and not self.isUpdateRunning:
             self.runUpdate(measurement)

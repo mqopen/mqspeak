@@ -182,6 +182,9 @@ class PhantSender(BaseSender):
 
     def checkSendResult(self, result):
         (status, reason, data) = result
+        if status != 200:
+            print("Response status error: {} {} - {}.".format(status, reason, data), file = sys.stderr)
+            return False
         return True
 
 class SendRunner:
