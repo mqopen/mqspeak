@@ -126,7 +126,7 @@ class BaseSender:
     def decodeResponseData(self, responseBytes):
         data = None
         try:
-            data = responseBytes.decode("utf-8")
+            data = responseBytes.decode("utf-8").strip()
         except UnicodeError as ex:
             print("Can't decode response data: {}".format(responseBytes), file=sys.stderr)
             data = "<Decode error>"

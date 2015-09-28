@@ -224,8 +224,8 @@ class SynchronousUpdater(BaseUpdater):
         """
         self.scheduleLock.acquire()
         self.executors.discard(executor)
-        if self.isUpdateScheduled:
-            self.isUpdateScheduled = False
+        self.isUpdateScheduled = False
+        if self.isDataBuffered():
             data = self.pullMeasurement()
             self.runUpdateLocked(data)
         self.scheduleLock.release()
