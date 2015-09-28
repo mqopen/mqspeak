@@ -35,12 +35,18 @@ class DataCollector:
         Notify data collector when new data is available.
         """
         for updateBuffer in self.updateBuffers:
+            self.tryBuffer(updateBuffer, dataIdentifier, data)
+
+    def tryBuffer(self, updateBuffer, dataIdentifier, data):
+        try:
             updateBuffer.updateReceivedData(dataIdentifier, data)
             if updateBuffer.isComplete():
                 d = updateBuffer.getData()
                 updateBuffer.reset()
                 measurement = Measurement.currentMeasurement(d)
                 self.channelUpdateSupervisor.dataAvailable(updateBuffer.channel, measurement)
+        except TopicException as ex:
+            pass
 
 class UpdateBuffer:
     """
@@ -88,6 +94,11 @@ class UpdateBuffer:
         for dataIdentifier in self.dataIdentifiers:
             self.dataDict[dataIdentifier] = None
 
+    def __str__(self):
+        return "UpdateBuffer({}: {})".format(self.channel, self.dataIdentifiers)
+
+    def __repr__(self):
+        return "<{}>".format(self.__str__())
 
 class TopicException(Exception):
     """
