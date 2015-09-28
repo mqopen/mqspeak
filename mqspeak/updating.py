@@ -157,7 +157,7 @@ class BlackoutUpdater(BaseUpdater):
             self.runUpdate(measurement)
 
     def resolveUpdateResult(self, result):
-        BaseUpdater.resolveUpdateResult(self, result)
+        pass
 
 class SynchronousUpdater(BaseUpdater):
     """
