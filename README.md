@@ -102,7 +102,7 @@ list of MQTT topic subscriptions. Full list of possible options in broker sectio
 - `Port` - Broker port (default 1883).
 - `User` - Username.
 - `Password` - Password.
-- `Topic` - Space separated list of topic subscriptions (mandatory).
+- `Topic` - Space separated list of topic subscriptions. Mandatory option.
 
 #### Channel section
 
