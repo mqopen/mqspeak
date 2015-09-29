@@ -54,16 +54,22 @@ class ProgramConfig:
         """
         Get list of enabled brokers.
         """
-        brokerSections = self.parser.get("Brokers", "Enabled").split()
+        section = "Brokers"
+        self.checkForEnabledOption(section)
+        brokerSections = self.parser.get(section, "Enabled").split()
         self.checkForSectionList(brokerSections)
         for brokerSection in brokerSections:
+            self.checkForBrokerMandatoryOptions(brokerSection)
             broker = self.createBroker(brokerSection)
             subscribtions = self.getBrokerSubscribtions(brokerSection)
             yield broker, subscribtions
 
+    def checkForBrokerMandatoryOptions(self, brokerSection):
+        optionList = ["Topic"]
+        self.checkForOptionList(brokerSection, optionList)
+
     def createBroker(self, brokerSection):
         try:
-            self.checkForOptionList(brokerSection, ["Topic"])
             options = self.parser.options(brokerSection)
             host = self.parser.get(brokerSection, "Host", fallback = "127.0.0.1")
             port = self.parser.getint(brokerSection, "Port", fallback = 1883)
@@ -98,13 +104,20 @@ class ProgramConfig:
         """
         Create list of enable channels.
         """
-        channelSections = self.parser.get("Channels", "Enabled").split()
+        section = "Channels"
+        self.checkForEnabledOption(section)
+        channelSections = self.parser.get(section, "Enabled").split()
         self.checkForSectionList(channelSections)
         for channelSection in channelSections:
+            self.checkForChannelMandatoryOptions(channelSection)
             channel = self.createChannel(channelSection)
             updaterFactory = self.getChannelUpdater(channelSection)
             updateMappingFactory = self.getDataFieldMapping(channelSection)
             yield channel, updaterFactory, updateMappingFactory
+
+    def checkForChannelMandatoryOptions(self, channelSection):
+        optionList = ["Key", "Type", "UpdateRate", "UpdateType", "UpdateFields"]
+        self.checkForOptionList(channelSection, optionList)
 
     def createChannel(self, channelSection):
         channelID = self.parser.get(channelSection, "Id", fallback = None)
@@ -142,7 +155,6 @@ class ProgramConfig:
         return updaterCls, updaterArgs
 
     def getDataFieldMapping(self, channelSection):
-        # TODO: check for section
         updaterSection = self.parser.get(channelSection, "UpdateFields")
         return self.createDataFieldMapping(updaterSection)
 
@@ -155,6 +167,9 @@ class ProgramConfig:
             brokerName, topic = optionValue
             updateMappingFactory.addMapping(brokerName, topic, mappingOption)
         return updateMappingFactory
+
+    def checkForEnabledOption(self, section):
+        self.checkForOption(section, "Enabled")
 
     def checkForSectionList(self, sectionList):
         for section in sectionList:
