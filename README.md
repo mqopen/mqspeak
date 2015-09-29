@@ -10,7 +10,7 @@ read more about it on my [blog](http://buben19.blogspot.com/).
 
 ### Dependencies
 
-Application runs at python3. It also requires [paho](https://www.eclipse.org/paho/clients/python/)
+Application runs on python3. It also requires [paho](https://www.eclipse.org/paho/clients/python/)
 MQTT client library. On Debian system install necessary dependencies with
 following commands:
 
