@@ -46,7 +46,7 @@ class Channel:
         return hash((self.name, self.apiKey))
 
     def __str__(self):
-        return "{} [{} - {}]".format(self.name, self.channelID, self.apiKey)
+        return "{} [Id: {}, Key: {}]".format(self.name, self.channelID, self.apiKey)
 
     def __repr__(self):
         return "<{}>".format(self.__str__())
@@ -70,7 +70,7 @@ class PhantChannel(Channel):
 
     def checkChannelIdentification(self, channelID):
         if channelID is None:
-            raise ChannelException("Phat channel must have identification")
+            raise ChannelException("Phant channel must have identification")
 
 class ChannelException:
     """
