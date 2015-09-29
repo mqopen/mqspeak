@@ -1,9 +1,9 @@
-# mqspeak - MQTT to ThingSpeak bridge
+# mqspeak - MQTT bridge
 
 mqspeak is [MQTT](http://mqtt.org/) client which collect data and transforms
-them into [ThingSpeak](https://thingspeak.com/) channel updates. It is able
-to handle multiple MQTT connections and independetly update multiple ThingSpeak
-channels.
+them into [ThingSpeak](https://thingspeak.com/) channel updates or [Phant](http://phant.io/)
+data streams. It is able to handle multiple MQTT connections and independetly update
+multiple channels.
 
 This is part of my IoT project. You can
 read more about it on my [blog](http://buben19.blogspot.com/).
@@ -51,31 +51,43 @@ option (default `/etc/mqspeak.conf`). This is sample configuration file:
     Enabled = channel1 channel2 channel3 channel4
 
     [channel1]
+    Id = CHANNELID
     Key = CHANNELKEY
+    Type = thingspeak
     UpdateRate = 15
     UpdateType = blackout
-    Field1 = humidity-broker sensors/humidity
-    Field2 = temperature-broker sensors/temperature
+    UpdateFields = dht-update
 
     [channel2]
+    Id = CHANNELID
     Key = CHANNELKEY
+    Type = thingspeak
     UpdateRate = 15
     UpdateType = buffered
-    Field1 = humidity-broker sensors/humidity
-    Field2 = temperature-broker sensors/temperature
+    UpdateFields = dht-update
 
     [channel3]
+    Id = CHANNELID
     Key = CHANNELKEY
+    Type = thingspeak
     UpdateRate = 15
     UpdateType = average
-    Field1 = humidity-broker sensors/humidity
-    Field2 = temperature-broker sensors/temperature
+    UpdateFields = dht-update
 
     [channel4]
+    Id = CHANNELID
     Key = CHANNELKEY
+    Type = phant
     UpdateRate = 15
     UpdateType = onchange
-    Field1 = door-broker sensors/door
+    UpdateFields = door-update
+
+    [dht-update]
+    field1 = humidity-broker sensors/humidity
+    field2 = temperature-broker sensors/temperature
+
+    [door-update]
+    state = door-broker sensors/door
 
 Configuration file has two mandatory sections: `[Brokers]` and `[Channels]`, each with
 one `[Enabled]` option. These options contains space separated broker and channel
@@ -96,11 +108,15 @@ list of MQTT topic subscriptions. Full list of possible options in broker sectio
 
 Each channel section has to define `Key`, `UpdateRate` and `UpdateType` options.
 
-- `Key` - Channel API write key.
+- `Id` - Channel ID. This field is mandatory for Phant channels.
+- `Key` - Channel API write key. Mandatory option.
+- `Type` - Specify channel type. Mandatory option. Following types are supported:
+  - `thingspeak` - [ThinkSpeak](https://thingspeak.com/) channel.
+  - `phant` - [Phant](http://phant.io/) channel.
 - `UpdateRate` - Channel update interval in seconds. Currently, ThinkSpeak allows
-  interval 15 seconds or greater.
+  interval 15 seconds or greater. Mandatory option.
 - `UpdateType` - Channel update type. Possible values are `blackout`, `buffered`,
-  `average` and `onchange`.
+  `average` and `onchange`. Mandatory option.
   - `blackout` - Until `UpdateRate` interval is expired, any incoming data are
     ignored. First data received after interval expiration are sent to ThingSpeak.
   - `buffered` - Incoming data are buffered during `UpdateRate` interval. After
@@ -110,10 +126,18 @@ Each channel section has to define `Key`, `UpdateRate` and `UpdateType` options.
     is immediately updated after `UpdateRate` interval is expired.
   - `onchange` - Data are marked with timestamp and stored in queue. Each item is
     sent after `UpdateRate` interval expires. **_Not implemented yet._**
-- `Field1` ... `Field8` - ThingSpeak field updates. This value contains space separated
-  name of broker section and topic.
+- `UpdateFields` - Specify section which defines updates for this channel. Mandatory option.
+
+#### UpdateFields section
+
+UpdateFields section consists of any number of options. Each option key specifies
+field name. Its value must be space separated name of broker section and topic.
+
+For ThinkSpeak channel, only option keys `Field1` ... `Field8` are valid.
 
 ### Questions
 
-- **mqspeak runs in foreground only.** - Yes, there is no double fork combo to run mqspeak in background. I use systemd init and I prefer to run all services as simple systemd units, which runs in foreground. Sorry about that.
+- **mqspeak runs in foreground only.** - Yes, there is no double fork combo to run
+  mqspeak in background. I use systemd init and I prefer to run all services as simple
+  systemd units, which runs in foreground. Sorry about that.
 - **It uses python3. Is python 2.x supported?** - No, I don't plan to support python 2.x.
