@@ -132,6 +132,23 @@ class BaseSender:
             data = "<Decode error>"
         return data
 
+    def fetch(self, channel, measurement):
+        """
+        Upload data to channel.
+
+        channel: Channel identification object.
+        measurement: Uploaded data.
+        """
+        raise NotImplementedError("Override this mehod in sub-class")
+
+    def checkSendResult(self, result):
+        """
+        Check if data upload was succcessful.
+
+        result: Tuplle of (status, reason, response)
+        """
+        raise NotImplementedError("Override this mehod in sub-class")
+
 class ThingSpeakSender(BaseSender):
     """
     Class for sending data to ThingSpeak. This class send measurements to URL api.thingspeak.com
