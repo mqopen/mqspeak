@@ -327,6 +327,8 @@ class AverageUpdater(SynchronousUpdater):
     def isAllMeasurementValuesValid(self, measurement):
         """
         Check if all measurement data can be converted to floating point numbers.
+
+        measurement: Measurement object.
         """
         for dataIdentifier, value in measurement.fields.items():
             try:
@@ -346,10 +348,10 @@ class OnChangeUpdater(BaseUpdater):
         raise NotImplementedError("Not implemented yet")
 
     def handleAvailableData(self, measurement):
-        pass
+        raise NotImplementedError("Not implemented yet")
 
     def resolveUpdateResult(self, result):
-        pass
+        raise NotImplementedError("Not implemented yet")
 
 class SchedulerExecutor:
     """
