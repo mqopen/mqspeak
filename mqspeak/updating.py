@@ -26,6 +26,9 @@ class ChannnelUpdateSupervisor:
     correct Updater object.
     """
 
+    ## @var channelUpdaterMapping
+    # Mapping for {channel: updater}.
+
     def __init__(self, channelUpdaterMapping):
         """!
         Initiate ChannnelUpdateSupervisor object.
@@ -65,11 +68,30 @@ class BaseUpdater:
     Updater object base class!
     """
 
+    ## @var channel
+    # Updated channel.
+
+    ## @var updateInterval
+    # Channel update interval.
+
+    ## @var isUpdateRunning
+    # Boolean variable to keep track if some update is currently running.
+
+    ## @var lastUpdated
+    # Last update time.
+
+    ## @var updateLock
+    # Mutual exclusion to running updates.
+
+    ## @var dispatcher
+    # Update dispatcher object.
+
     def __init__(self, channel, updateInterval):
         """!
         Initiate BaseUpdater object.
 
         @param channel Updated channel.
+        @param updateInterval Update interval.
         """
         self.channel = channel
         self.updateInterval = updateInterval
@@ -170,10 +192,16 @@ class BlackoutUpdater(BaseUpdater):
     """
 
     def handleAvailableData(self, measurement):
+        """!
+        @copydoc BaseUpdater::handleAvailableData()
+        """
         if self.isUpdateIntervalExpired() and not self.isUpdateRunning:
             self.runUpdate(measurement)
 
     def resolveUpdateResult(self, result):
+        """!
+        @copydoc BaseUpdater::resolveUpdateResult()
+        """
         pass
 
 class SynchronousUpdater(BaseUpdater):
@@ -181,9 +209,21 @@ class SynchronousUpdater(BaseUpdater):
     Base class for all updaters which tries to update channel in synchronous fashion.
     """
 
+    ## @var isUpdateScheduled
+    # Boolean variable to track if some update is already scheduled.
+
+    ## @var bufferLock
+    # Mutual exclusion for measurement buffer.
+
+    ## @var scheduleLock
+    # Mutual exclusion for isUpdateScheduled flag.
+
+    ## @var executors
+    # Set of running executors.
+
     def __init__(self, channel, updateInterval):
         """!
-        Initiate SynchronousUpdater object,
+        Initiate SynchronousUpdater object.
 
         @param channel
         @param updateInterval
@@ -191,17 +231,15 @@ class SynchronousUpdater(BaseUpdater):
         BaseUpdater.__init__(self, channel, updateInterval)
         self.resetBuffer()
         self.isUpdateScheduled = False
-
-        # Mutual exclusion for measurement buffer.
         self.bufferLock = threading.Semaphore(1)
-
-        # Mutual exclusion for isUpdateScheduled flag.
         self.scheduleLock = threading.Semaphore(1)
-
         # TODO: Check race conditions with this set.
         self.executors = set()
 
     def handleAvailableData(self, measurement):
+        """!
+        @copydoc BaseUpdater::handleAvailableData()
+        """
         self.scheduleLock.acquire()
         if not self.isUpdateScheduled:
             if self.isUpdateRunning:
@@ -216,6 +254,9 @@ class SynchronousUpdater(BaseUpdater):
         self.scheduleLock.release()
 
     def resolveUpdateResult(self, result):
+        """!
+        @copydoc BaseUpdater::resolveUpdateResult()
+        """
         # Schedule new update job. Just for case that new data arrive before time
         # interval expires.
         self.scheduleLock.acquire()
@@ -254,8 +295,10 @@ class SynchronousUpdater(BaseUpdater):
         self.scheduleLock.release()
 
     def pullMeasurement(self):
-        """
+        """!
         Atomically get buferred measurement and clear buffer.
+
+        @return Measurement.
         """
         d = None
         self.bufferLock.acquire()
@@ -265,6 +308,9 @@ class SynchronousUpdater(BaseUpdater):
         return d
 
     def stop(self):
+        """!
+        Stop all executors.
+        """
         for executor in self.executors:
             executor.stop()
         self.executors = set()
@@ -301,16 +347,31 @@ class BufferedUpdater(SynchronousUpdater):
     after time expires.
     """
 
+    ## @var measurement
+    # Stored measurement.
+
     def resetBuffer(self):
+        """!
+        @copydoc SynchronousUpdater::resetBuffer()
+        """
         self.measurement = None
 
     def storeUpdateData(self, measurement):
+        """!
+        @copydoc SynchronousUpdater::storeUpdateData()
+        """
         self.measurement = measurement
 
     def isDataBuffered(self):
+        """
+        @copydoc SynchronousUpdater::isDataBuffered()
+        """
         return self.measurement is not None
 
     def getMeasurement(self):
+        """!
+        @copydoc SynchronousUpdater::getMeasurement()
+        """
         return self.measurement
 
 class AverageUpdater(SynchronousUpdater):
@@ -319,11 +380,12 @@ class AverageUpdater(SynchronousUpdater):
     average value while sending them.
     """
 
+    ## @var intervalMeasurements
+    # Stored measurements to compute average values.
+
     def storeUpdateData(self, measurement):
         """!
-        Save measurement in local buffer.
-
-        @param measurement
+        @copydoc SynchronousUpdater::storeUpdateData()
         """
         if self.isAllMeasurementValuesValid(measurement):
             self.intervalMeasurements.append(measurement)
@@ -331,12 +393,21 @@ class AverageUpdater(SynchronousUpdater):
             print("Can't convert all measured values to numbers: {}".format(measurement), file=sys.stderr)
 
     def resetBuffer(self):
+        """!
+        @copydoc SynchronousUpdater::resetBuffer()
+        """
         self.intervalMeasurements = []
 
     def isDataBuffered(self):
+        """!
+        @copydoc SynchronousUpdater::isDataBuffered()
+        """
         return len(self.intervalMeasurements) > 0
 
     def getMeasurement(self):
+        """!
+        @copydoc SynchronousUpdater::getMeasurement()
+        """
         return self.createAverageMeasurement()
 
     def createAverageMeasurement(self):
@@ -372,21 +443,44 @@ class OnChangeUpdater(BaseUpdater):
     Send every value change.
     """
 
+    ## @var changeBuffer
+    # Store data which needs to be send.
+
     def __init__(self, channel):
+        """!
+        Initiate OnChangeUpdater object.
+
+        @param channel
+        """
         BaseUpdater.__init__(self, channel)
         self.changeBuffer = []
         raise NotImplementedError("Not implemented yet")
 
     def handleAvailableData(self, measurement):
+        """!
+        @copydoc BaseUpdater::handleAvailableData()
+        """
         raise NotImplementedError("Not implemented yet")
 
     def resolveUpdateResult(self, result):
+        """!
+        @copydoc BaseUpdater::resolveUpdateResult()
+        """
         raise NotImplementedError("Not implemented yet")
 
 class SchedulerExecutor:
     """!
     Execute scheduler object in separate thread.
     """
+
+    ## @var event
+    # Event object.
+
+    ## @var scheduleTime
+    # Schedule time.
+
+    ## @var action
+    # Scheduled action.
 
     def __init__(self, scheduleTime, action):
         """!
