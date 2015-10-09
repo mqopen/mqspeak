@@ -21,46 +21,55 @@ import queue
 import sys
 
 class ChannnelUpdateSupervisor:
-    """
+    """!
     Manage channel updaters. Object is responsible to delivering channel update event to
     correct Updater object.
     """
 
     def __init__(self, channelUpdaterMapping):
-        """
-        channelUpdaterMapping: mapping for {channel: updater}
+        """!
+        Initiate ChannnelUpdateSupervisor object.
+
+        @param channelUpdaterMapping Mapping for {channel: updater}.
         """
         self.channelUpdaterMapping = channelUpdaterMapping
 
     def dataAvailable(self, channel, measurement):
-        """
+        """!
         Deliver new update to correct Updater object.
+
+        @param channel
+        @param measurement
         """
         updater = self.channelUpdaterMapping[channel]
         updater.dataAvailable(measurement)
 
     def setDispatcher(self, dispatcher):
-        """
+        """!
         Assign a dispatcher to all updaters.
+
+        @param dispatcher
         """
         for updater in self.channelUpdaterMapping.values():
             updater.setDispatcher(dispatcher)
 
     def stop(self):
-        """
+        """!
         Stop execution of all updaters.
         """
         for updater in self.channelUpdaterMapping.values():
             updater.stop()
 
 class BaseUpdater:
-    """
-    Updater object base class
+    """!
+    Updater object base class!
     """
 
     def __init__(self, channel, updateInterval):
-        """
-        channel: updated channel
+        """!
+        Initiate BaseUpdater object.
+
+        @param channel Updated channel.
         """
         self.channel = channel
         self.updateInterval = updateInterval
@@ -69,42 +78,48 @@ class BaseUpdater:
         self.updateLock = threading.Semaphore(1)
 
     def setDispatcher(self, dispatcher):
-        """
+        """!
         Assign a dispatcher.
 
-        dispatcher: dispatcher object
+        @param dispatcher Dispatcher object.
         """
         self.dispatcher = dispatcher
 
     def dataAvailable(self, measurement):
-        """
+        """!
         Update new data.
+
+        @param measurement
         """
         self.updateLock.acquire()
         self.handleAvailableData(measurement)
         self.updateLock.release()
 
     def runUpdate(self, measurement):
-        """
+        """!
         Call this method in sub-class from handleAvailableData method.
+
+        @param measurement
         """
         self.isUpdateRunning = True
         self.dispatcher.updateAvailable(self.channel, measurement, self)
 
     def runUpdateLocked(self, measurement):
-        """
-        Run update. This method avoids race conditions. Do not call this method from handleAvailableData()
-        metod - causes dead lock.
+        """!
+        Run update. This method avoids race conditions. Do not call this method
+        from handleAvailableData() metod - causes dead lock.
+
+        @param measurement
         """
         self.updateLock.acquire()
         self.runUpdate(measurement)
         self.updateLock.release()
 
     def notifyUpdateResult(self, result):
-        """
+        """!
         Callback method with update result
 
-        result: UpdateResult object
+        @param result UpdateResult object.
         """
         self.updateLock.acquire()
         self.isUpdateRunning = False
@@ -114,37 +129,42 @@ class BaseUpdater:
         self.updateLock.release()
 
     def stop(self):
-        """
+        """!
         Override this method if updater manage some other running thread.
         """
 
     def isUpdateIntervalExpired(self):
-        """
-        True if update interval has expired, False otherwise.
+        """!
+        Check if Update interval has expired.
+
+        @return True if update interval has expired, False otherwise.
         """
         return (datetime.datetime.now() - self.lastUpdated) > self.updateInterval
 
     def restartUpdateIntervalCounter(self):
+        """!
+        Restart interval counter.
+        """
         self.lastUpdated = datetime.datetime.now()
 
     def handleAvailableData(self, measurement):
-        """
-        Handle new data in updater.
+        """!
+        Handle new data in updater. Override this mehod in sub-class.
 
-        measurement: new data measurement
+        @param measurement New data measurement.
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
     def resolveUpdateResult(self, result):
-        """
-        Resolve update result in updater.
+        """!
+        Resolve update result in updater. Override this mehod in sub-class.
 
-        result: UpdateResult object
+        @param result UpdateResult object.
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
 class BlackoutUpdater(BaseUpdater):
-    """
+    """!
     Ignore any incomming data during blackkout period. Send first data after this
     period expires.
     """
@@ -157,11 +177,17 @@ class BlackoutUpdater(BaseUpdater):
         pass
 
 class SynchronousUpdater(BaseUpdater):
-    """
+    """!
     Base class for all updaters which tries to update channel in synchronous fashion.
     """
 
     def __init__(self, channel, updateInterval):
+        """!
+        Initiate SynchronousUpdater object,
+
+        @param channel
+        @param updateInterval
+        """
         BaseUpdater.__init__(self, channel, updateInterval)
         self.resetBuffer()
         self.isUpdateScheduled = False
@@ -244,31 +270,33 @@ class SynchronousUpdater(BaseUpdater):
         self.executors = set()
 
     def resetBuffer(self):
-        """
-        Clear internal buffer with measurements.
+        """!
+        Clear internal buffer with measurements. Override this mehod in sub-class.
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
     def storeUpdateData(self, measurement):
-        """
-        Save new measurement.
+        """!
+        Save new measurement. Override this mehod in sub-class.
+
+        @param measurement
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
     def isDataBuffered(self):
-        """
-        Check if there are some stored measurements.
+        """!
+        Check if there are some stored measurements. Override this mehod in sub-class.
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
     def getMeasurement(self):
-        """
-        Get stored measurement.
+        """!
+        Get stored measurement. Override this mehod in sub-class.
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
 class BufferedUpdater(SynchronousUpdater):
-    """
+    """!
     Implement some timer to send update is time elapses. Don't wait for incoming data
     after time expires.
     """
@@ -286,14 +314,16 @@ class BufferedUpdater(SynchronousUpdater):
         return self.measurement
 
 class AverageUpdater(SynchronousUpdater):
-    """
+    """!
     Like BufferedUpdater but keep track all data which wasn't send and calculate
     average value while sending them.
     """
 
     def storeUpdateData(self, measurement):
-        """
+        """!
         Save measurement in local buffer.
+
+        @param measurement
         """
         if self.isAllMeasurementValuesValid(measurement):
             self.intervalMeasurements.append(measurement)
@@ -310,7 +340,7 @@ class AverageUpdater(SynchronousUpdater):
         return self.createAverageMeasurement()
 
     def createAverageMeasurement(self):
-        """
+        """!
         Create measurement from collected data during update interval period.
         """
         averageData = {}
@@ -325,10 +355,10 @@ class AverageUpdater(SynchronousUpdater):
         return Measurement(averageData, lastTime)
 
     def isAllMeasurementValuesValid(self, measurement):
-        """
+        """!
         Check if all measurement data can be converted to floating point numbers.
 
-        measurement: Measurement object.
+        @param measurement Measurement object.
         """
         for dataIdentifier, value in measurement.fields.items():
             try:
@@ -338,7 +368,7 @@ class AverageUpdater(SynchronousUpdater):
         return True
 
 class OnChangeUpdater(BaseUpdater):
-    """
+    """!
     Send every value change.
     """
 
@@ -354,16 +384,16 @@ class OnChangeUpdater(BaseUpdater):
         raise NotImplementedError("Not implemented yet")
 
 class SchedulerExecutor:
-    """
+    """!
     Execute scheduler object in separate thread.
     """
 
     def __init__(self, scheduleTime, action):
-        """
+        """!
         Initiate scheduler executor.
 
-        scheduleTime: timedelta object
-        action: Callable object executed after schedule time expires. Action takes one argument,
+        @param scheduleTime Timedelta object.
+        @param action Callable object executed after schedule time expires. Action takes one argument,
             which is reference to this executor.
         """
         self.event = threading.Event()
@@ -371,12 +401,15 @@ class SchedulerExecutor:
         self.action = action
 
     def __call__(self):
+        """!
+        Run schedule execution.
+        """
         scheduleExpires = not self.event.wait(self.scheduleTime.total_seconds())
         if scheduleExpires:
             self.action(self)
 
     def stop(self):
-        """
+        """!
         Stop scheduler execution.
         """
         self.event.set()

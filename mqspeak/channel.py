@@ -16,26 +16,26 @@
 import enum
 
 class ChannelType(enum.Enum):
-    """
-    Enumeration if channel types.
+    """!
+    Enumeration of channel types.
     """
 
     thingspeak = 0
     phant = 1
 
 class Channel:
-    """
+    """!
     ThingSpeak channel identification object.
     """
 
     def __init__(self, channelType, name, channelID, apiKey):
-        """
+        """!
         Initiate channel object.
 
-        channelType: ChannelType enumeration object
-        name: channel name
-        channelID: channel identification
-        apiKey: channel write API key
+        @param channelType ChannelType enumeration object.
+        @param name Channel name.
+        @param channelID Channel identification.
+        @param apiKey Channel write API key.
         """
         self.channelType = channelType
         self.name = name
@@ -52,11 +52,18 @@ class Channel:
         return "<{}>".format(self.__str__())
 
 class ThingSpeakChannel(Channel):
-    """
+    """!
     ThingSpeak channel identification object.
     """
 
     def __init__(self, name, channelID, apiKey):
+        """!
+        Initiate ThingSpeak channel object.
+
+        @param name Channel name.
+        @param channelID Channel identification.
+        @param apiKey Channel write key.
+        """
         Channel.__init__(self, ChannelType.thingspeak, name, channelID, apiKey)
 
 class PhantChannel(Channel):
@@ -65,6 +72,13 @@ class PhantChannel(Channel):
     """
 
     def __init__(self, name, channelID, apiKey):
+        """!
+        Initiate Phant channel object.
+
+        @param name Channel name.
+        @param channelID Channel identification.
+        @param apiKey Channel write key.
+        """
         self.checkChannelIdentification(channelID)
         Channel.__init__(self, ChannelType.phant, name, channelID, apiKey)
 
@@ -73,6 +87,6 @@ class PhantChannel(Channel):
             raise ChannelException("Phant channel must have identification")
 
 class ChannelException:
-    """
+    """!
     Channel related exceptions.
     """

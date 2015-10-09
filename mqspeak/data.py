@@ -16,15 +16,17 @@
 import datetime
 
 class Measurement:
-    """
+    """!
     Measured data mapping in DataIdentifier: value format with corresponding timestamp.
     """
 
     def __init__(self, fields, time):
-        """
-        fields: maping {dataIdentifier: vaue}
-        time: measurement timestamp
-        throws AttributeError: if length of fields is greater than 8
+        """!
+        Initiate measurement object.
+
+        @param fields Maping {dataIdentifier: vaue}.
+        @param time  Measurement timestamp.
+        @throws AttributeError If length of fields is greater than 8.
         """
         if len(fields) > 8:
             raise AttributeError("Fields must be up to length 8, {} given".format(len(fields)))
@@ -33,10 +35,10 @@ class Measurement:
 
     @classmethod
     def currentMeasurement(cls, fields):
-        """
+        """!
         Build measurement object with current time.
 
-        fields: maping {dataIdentifier: vaue}
+        @param fields Maping {dataIdentifier: vaue}.
         """
         return cls(fields, datetime.datetime.now())
 
@@ -50,20 +52,25 @@ class Measurement:
         return len(self.fields)
 
 class MeasurementParamConverter:
-    """
+    """!
     Convert data measurement into ThingSpeak fields for single channel.
     """
 
     def __init__(self, dataFieldsMapping):
-        """
-        dataFieldsMapping: object for mapping DataIdentifier object to ThingSpeak channel field.
-            {DataIdentifier: "field"}
+        """!
+        Initiate MeasurementParamConverter object.
+
+        @param dataFieldsMapping Object for mapping DataIdentifier object to
+            ThingSpeak channel field {DataIdentifier: "field"}.
         """
         self.dataFieldsMapping = dataFieldsMapping
 
     def convert(self, measurement):
-        """
-        throws ConvertException: if reguired measurement item is missing
+        """!
+        Convert measurement.
+
+        @param measurement Measurement object.
+        @throws ConvertException If reguired measurement item is missing.
         """
         params = dict()
         for topicName in measurement.fields:
@@ -78,11 +85,17 @@ class MeasurementParamConverter:
         return self.__str__()
 
 class DataIdentifier:
-    """
+    """!
     Wrapper object to convert broker and topic into uniquie identification key
     """
 
     def __init__(self, broker, topic):
+        """!
+        Initiate DataIdentifier object.
+
+        @param broker Broker object.
+        @param topic Topic object.
+        """
         self.broker = broker
         self.topic = topic
 
@@ -101,6 +114,6 @@ class DataIdentifier:
         return self.broker == other.broker and self.topic == other.topic
 
 class ConvertException(Exception):
-    """
-    Conversion error
+    """!
+    Conversion error.
     """

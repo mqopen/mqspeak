@@ -22,23 +22,25 @@ import sys
 import threading
 
 class BrokerThreadManager:
-    """
+    """!
     Manage broker receiving threads
     """
 
     def __init__(self, listenDescriptors, dataCollector):
-        """
-        listenDescriptors: listen descriptor iterable object
-            broker: broker descriptor object
-            subsriptionIterable:
-        dataCollector: DataCollector object
+        """!
+        Initiate BrokerThreadManager oject.
+
+        @param listenDescriptors Listen descriptor iterable object.
+            @li broker: broker descriptor object
+            @li subsriptionIterable:
+        @param dataCollector DataCollector object.
         """
         self.idManager = BrokerReceiverIDManager()
         self.clients = [BrokerReceiver(self.idManager.createReceiverID(), x, dataCollector) for x in listenDescriptors]
         self.isThreadsRunning = False
 
     def start(self):
-        """
+        """!
         Start all receiving threads.
         """
         if self.isThreadsRunning:
@@ -48,7 +50,7 @@ class BrokerThreadManager:
             threading.Thread(target = client).start()
 
     def stop(self):
-        """
+        """!
         Stop all receving threads.
         """
         if not self.isThreadsRunning:
@@ -58,16 +60,18 @@ class BrokerThreadManager:
             client.stop()
 
 class BrokerReceiver:
-    """
+    """!
     Broker receiving thread
     """
 
     def __init__(self, clientID, listenDescriptor, dataCollector):
-        """
-        listenDescriptor: set containing following fields: (broker, subscription)
-            broker: broker descriptor object
-            subscription:
-        dataCollector: listener object to deliver received updates
+        """!
+        Initiate BrokerReceiver object.
+
+        @param listenDescriptor Set containing following fields: (broker, subscription).
+            @li broker: broker descriptor object
+            @li subscription:
+        @param dataCollector Listener object to deliver received updates.
         """
         self.clientID = clientID
         (self.broker, self.subsciption) = listenDescriptor
@@ -91,22 +95,35 @@ class BrokerReceiver:
         self.client.loop_forever()
 
     def onConnect(self, client, userdata, flags, rc):
-        """
+        """!
         The callback for when the client receives a CONNACK response from the server.
+
+        @param client
+        @param userdata
+        @param flags
+        @param rc
         """
         print("{}: [{}] {}.".format(self._createClientIdentificationString(), rc, self._getClientConnectionStatus(rc)))
         for sub in self.subsciption:
             (result, mid) = self.client.subscribe(sub)
 
     def onDisconnect(self, client, userdata, rc):
-        """
+        """!
         Callback when client is disconnected.
+
+        @param client
+        @param userdata
+        @param rc
         """
         print("Client dicsconnect: {}".format(rc))
 
     def onMessage(self, client, userdata, msg):
-        """
+        """!
         The callback for when a PUBLISH message is received from the server.
+
+        @param client
+        @param userdata
+        @param msg
         """
         dataID = DataIdentifier(self.broker, msg.topic)
         try:
@@ -116,24 +133,38 @@ class BrokerReceiver:
             print("Can't decode received message payload: {}".format(msg.payload), file=sys.stderr)
 
     def onSubscribe(self, client, userdata, mid, granted_qos):
-        """
+        """!
         Callback when client is subscribed to topic.
+
+        @param client
+        @param userdata
+        @param mid
+        @param granted_qos
         """
 
     def onUnsubscribe(self, client, userdata, mid):
-        """
+        """!
         Callback when client is unsubscribed.
+
+        @param client
+        @param userdata
+        @param mid
         """
 
     def onLog(self, client, userdata, level, buf):
-        """
+        """!
         Logging messages.
+
+        @param client
+        @param userdata
+        @param level
+        @param buf
         """
         if System.verbose:
             print("{}: [{}] {}".format(self._createClientIdentificationString(), level, buf))
 
     def stop(self):
-        """
+        """!
         Stop receiver thread. Call this method to nicely end __call__() method.
         """
         self.client.disconnect()
@@ -158,17 +189,17 @@ class BrokerReceiver:
         return "{} ({} [{}:{}])".format(self.clientID, self.broker.name, self.broker.host, self.broker.port)
 
 class BrokerReceiverID:
-    """
+    """!
     Broker receiver thread ID.
     """
 
     def __init__(self, hostname, pid, receiverID):
-        """
+        """!
         Create broker receiver thread lient ID.
 
-        hostname: machine hostname
-        pid: current pid
-        receiverID: receivin thread ID
+        @param hostname Machine hostname.
+        @param pid Current PID.
+        @param receiverID Receiving thread ID.
         """
         self.hostname = hostname
         self.pid = pid
@@ -181,7 +212,7 @@ class BrokerReceiverID:
         return "<{}>".format(self.__str__())
 
 class BrokerReceiverIDManager:
-    """
+    """!
     Manage receiver IDs.
     """
 
@@ -191,11 +222,16 @@ class BrokerReceiverIDManager:
         self.receiverCounter = 0
 
     def createReceiverID(self):
+        """!
+        Create new receiver ID.
+
+        @return Receiver ID.
+        """
         _receiverID = self.receiverCounter
         self.receiverCounter += 1
         return BrokerReceiverID(self.hostname, self.pid, _receiverID)
 
 class ThreadManagerException(Exception):
-    """
-    Indicate BrokerThreadManager error
+    """!
+    Indicate BrokerThreadManager error.
     """

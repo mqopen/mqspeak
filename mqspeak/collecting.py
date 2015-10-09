@@ -16,28 +16,39 @@
 from mqspeak.data import Measurement
 
 class DataCollector:
-    """
+    """!
     Object for collecting received data from MQTT brokers. This object is also resposible
     to provide received data to each update buffer. If some of update buffers becomes full,
     its content is given to ChannelUpdateSupervisor object.
     """
 
     def __init__(self, updateBuffers, channelUpdateSupervisor):
-        """
-        updateBuffers: list of UpdateBuffer objects
-        channelUpdateSupervisor: update supervisor
+        """!
+        Initiate DataCollector object.
+
+        @param updateBuffers List of UpdateBuffer objects.
+        @param channelUpdateSupervisor UpdateSupervisor object.
         """
         self.updateBuffers = updateBuffers
         self.channelUpdateSupervisor = channelUpdateSupervisor
 
     def onNewData(self, dataIdentifier, data):
-        """
+        """!
         Notify data collector when new data is available.
+
+        @param dataIdentifier Data identification.
+        @param data Payload.
         """
         for updateBuffer in self.updateBuffers:
             self.tryBuffer(updateBuffer, dataIdentifier, data)
 
     def tryBuffer(self, updateBuffer, dataIdentifier, data):
+        """!
+        Try to update buffer.
+
+        @param dataIdentifier Data identification.
+        @param data Payload.
+        """
         try:
             updateBuffer.updateReceivedData(dataIdentifier, data)
             if updateBuffer.isComplete():
@@ -49,28 +60,36 @@ class DataCollector:
             pass
 
 class UpdateBuffer:
-    """
+    """!
     Object for buffering reqired data set before delivering them to ThingSpeak.
     """
 
     def __init__(self, channel, dataIdentifiers):
-        """
-        channel: channel identification object
-        dataIdentifiers: iterable of DataIdentifier objects
+        """!
+        Initiate UpdateBuffer object.
+
+        @param channel Channel identification object.
+        @param dataIdentifiers Iterable of DataIdentifier objects.
         """
         self.channel = channel
         self.dataIdentifiers = dataIdentifiers
         self.reset()
 
     def isComplete(self):
-        """
-        True if all required data are buffered. False otherwise.
+        """!
+        Check if all required data are buffered.
+
+        @return True if all required data are buffered, False otherwise.
         """
         return not any(x is None for x in self.dataDict.values())
 
     def updateReceivedData(self, dataIdentifier, value):
-        """
-        throws TopicException: if unnessesary topic is updated
+        """!
+        Update received data.
+
+        @param dataIdentifier Data identification.
+        @param value Data content.
+        @throws TopicException If unnessesary topic is updated.
         """
         if dataIdentifier not in self.dataDict:
             raise TopicException("Illegal topic update: {}".format(dataIdentifier))
@@ -78,8 +97,10 @@ class UpdateBuffer:
             self.dataDict[dataIdentifier] = value
 
     def getData(self):
-        """
+        """!
         Get dictionary with buffered data.
+
+        @return Buffered data.
         """
         if not self.isComplete():
             raise TopicException("Some topic data is missing")
@@ -87,7 +108,7 @@ class UpdateBuffer:
             return self.dataDict
 
     def reset(self):
-        """
+        """!
         Clear buffered data.
         """
         self.dataDict = dict()
@@ -101,6 +122,6 @@ class UpdateBuffer:
         return "<{}>".format(self.__str__())
 
 class TopicException(Exception):
-    """
+    """!
     Update buffer related errors.
     """

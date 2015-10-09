@@ -26,8 +26,10 @@ class ProgramConfig:
     """
 
     def __init__(self, configFile):
-        """
-        configFile: path to configuration file
+        """!
+        Initiate program configuration object.
+
+        @param configFile Path to configuration file.
         """
         self.configFile = configFile
         self.parser = configparser.ConfigParser()
@@ -35,6 +37,8 @@ class ProgramConfig:
     def parse(self):
         """
         Parse config file.
+
+        @return Configuration object.
         """
         self.parser.read(self.configFile)
         self.checkForMandatorySections()
@@ -188,7 +192,7 @@ class ProgramConfig:
             raise ConfigException("Section {}: {} option is missing".format(section, option))
 
 class ConfigCache:
-    """
+    """!
     Cache object for storing app configuration.
     """
 
@@ -197,14 +201,17 @@ class ConfigCache:
         self.channelUpdateDescribtors = []
 
     def addBroker(self, broker, subscribtions):
-        """
+        """!
+        Add broker to configuration object.
         """
         listenDescriptor = (broker, subscribtions)
         self.listenDescriptors.append(listenDescriptor)
 
     def addChannel(self, channel, updater, updateMapping):
-        """
-        raises: ConfigException when update mapping contains unknown broker
+        """!
+        Add channel to configuration object.
+
+        @throws ConfigException When update mapping contains unknown broker.
         """
         channelUpdateDescribtor = (channel, updater, updateMapping)
         self.channelUpdateDescribtors.append(channelUpdateDescribtor)
@@ -227,6 +234,10 @@ class ConfigCache:
         raise ConfigException("Unknown broker name: {}".format(brokerName))
 
 class ChannelUpdaterFactory:
+    """!
+    Build channel.
+    """
+
     def __init__(self, updaterCls, updaterArgs):
         self.updaterCls = updaterCls
         self.updaterArgs = updaterArgs
@@ -235,6 +246,10 @@ class ChannelUpdaterFactory:
         return self.updaterCls(channel, *self.updaterArgs)
 
 class UpdateMappingFactory:
+    """!
+    Build UpdateMapping object.
+    """
+
     def __init__(self):
         self.mapping = {}
 
@@ -259,6 +274,6 @@ class UpdateMappingFactory:
         return mapping
 
 class ConfigException(Exception):
-    """
+    """!
     Exception raised during parsing configuration file
     """

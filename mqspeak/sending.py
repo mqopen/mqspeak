@@ -23,13 +23,15 @@ from mqspeak.system import System
 from mqspeak.channel import ChannelType
 
 class ChannelUpdateDispatcher:
-    """
+    """!
     Dispatching new update threads.
     """
 
     def __init__(self, channelConvertMapping):
-        """
-        channelConvertMapping: mapping {channel: channelParamConverter}
+        """!
+        Initiate ChannelUpdateDispatcher object.
+
+        @param channelConvertMapping Mapping {channel: channelParamConverter}.
         """
         self.channelSenders = self.createChannelSenders(channelConvertMapping)
         self.dispatchLock = threading.Semaphore(0)
@@ -37,27 +39,39 @@ class ChannelUpdateDispatcher:
         self.updateQueue = collections.deque()
 
     def createChannelSenders(self, channelConvertMapping):
+        """!
+        Crate channel senders mapping.
+
+        @param channelConvertMapping ChannelConvertMapping object.
+        @return Senders mapping.
+        """
         channelSenders = {}
         channelSenders[ChannelType.thingspeak] = ThingSpeakSender(channelConvertMapping)
         channelSenders[ChannelType.phant] = PhantSender(channelConvertMapping)
         return channelSenders
 
     def updateAvailable(self, channel, measurement, resultNotify):
-        """
-        Notify main thread when new data is available
+        """!
+        Notify main thread when new data is available.
+
+        @param channel
+        @param measurement
+        @param resultNotify
         """
         self.updateQueue.append((channel, measurement, resultNotify))
         self.dispatchLock.release()
 
     def sendJobDone(self, result):
-        """
-        notify updater
+        """!
+        Notify updater.
+
+        @param result
         """
         (returnCode, updater) = result
         updater.notifyUpdateResult(returnCode)
 
     def run(self):
-        """
+        """!
         Start update dispatcher main loop.
         """
         self.running = True
@@ -73,19 +87,19 @@ class ChannelUpdateDispatcher:
             self.dispatch(channel, measurement, resultNotify)
 
     def stop(self):
-        """
+        """!
         Stop dispatcher thread.
         """
         self.running = False
         self.dispatchLock.release()
 
     def dispatch(self, channel, measurement, updater):
-        """
+        """!
         Dispatch new ThingSpeak update thread.
 
-        channel: updated channel
-        measurement: update data
-        updater: notified object with update results
+        @param channel Updated channel.
+        @param measurement Update data.
+        @param updater Notified object with update results.
         """
         sendThread = threading.Thread(
             target = SendRunner(
@@ -97,19 +111,24 @@ class ChannelUpdateDispatcher:
         sendThread.start()
 
 class BaseSender:
-    """
+    """!
     Sender base class.
     """
 
     def __init__(self, channelConvertMapping):
-        """
-        channelConvertMapping: mapping {channel: channelParamConverter}
+        """!
+        Initiate Sender base class.
+
+        @param channelConvertMapping Mapping {channel: channelParamConverter}.
         """
         self.channelConvertMapping = channelConvertMapping
 
     def send(self, channel,  measurement):
-        """
+        """!
         Send measurement to ThinkSpeak.
+
+        @param channel
+        @param measurement
         """
         try:
             status, reason, responseBytes = self.fetch(channel, measurement)
@@ -124,6 +143,12 @@ class BaseSender:
             return UpdateResult(False)
 
     def decodeResponseData(self, responseBytes):
+        """!
+        Decode response data.
+
+        @param responseBytes
+        @return Decoded data or decode error message.
+        """
         data = None
         try:
             data = responseBytes.decode("utf-8").strip()
@@ -133,24 +158,24 @@ class BaseSender:
         return data
 
     def fetch(self, channel, measurement):
-        """
-        Upload data to channel.
+        """!
+        Upload data to channel. Override this mehod in sub-class.
 
-        channel: Channel identification object.
-        measurement: Uploaded data.
+        @param channel Channel identification object.
+        @param measurement Uploaded data.
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
     def checkSendResult(self, result):
-        """
-        Check if data upload was succcessful.
+        """!
+        Check if data upload was succcessful. Override this mehod in sub-class.
 
-        result: Tuplle of (status, reason, response)
+        @param result Tuple of (status, reason, response).
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
 class ThingSpeakSender(BaseSender):
-    """
+    """!
     Class for sending data to ThingSpeak. This class send measurements to URL api.thingspeak.com
     using HTTPS method. It also parses send result and checks if transfer was successful.
     """
@@ -179,9 +204,9 @@ class ThingSpeakSender(BaseSender):
         return True
 
 class PhantSender(BaseSender):
-
-    def __init__(self, channelConvertMapping):
-        self.channelConvertMapping = channelConvertMapping
+    """!
+    Send data to Phant server.
+    """
 
     def fetch(self, channel, measurement):
         body = self.channelConvertMapping[channel].convert(measurement)
@@ -205,17 +230,19 @@ class PhantSender(BaseSender):
         return True
 
 class SendRunner:
-    """
+    """!
     Callable wrapper class for sending data to ThingSpeak in separate thread.
     """
 
     def __init__(self, sender, channel, measurement, updater, jobNotify):
-        """
-        sender: sender object. This object must implement send(channel,  measurement) method.
-        channel: channel description object
-        measurement: measured data
-        updater: updater object which will be called by dispatcher after send job is done
-        jobNotify: listener object called after data send.
+        """!
+        Initiate SendRunner object.
+
+        @param sender Sender object. This object must implement send(channel,  measurement) method.
+        @param channel Channel description object.
+        @param measurement Measured data.
+        @param updater Updater object which will be called by dispatcher after send job is done.
+        @param jobNotify Listener object called after data send.
         """
         self.sender = sender
         self.channel = channel
@@ -224,7 +251,7 @@ class SendRunner:
         self.jobNotify = jobNotify
 
     def __call__(self):
-        """
+        """!
         Thread code.
         """
         try :
@@ -234,17 +261,22 @@ class SendRunner:
             self.jobNotify.sendJobDone(ex)
 
 class UpdateResult:
-    """
+    """!
     Encapsulate update result.
     """
 
     def __init__(self, success):
-        """
+        """!
         Initiate update result.
 
-        success: indicate if update was successful or not
+        @param success Indicate if update was successful or not
         """
         self.success = success
 
     def wasSuccessful(self):
+        """!
+        Check if UpdateResul was successful.
+
+        @return True if was sucessful, False otherwise.
+        """
         return self.success

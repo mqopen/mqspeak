@@ -20,14 +20,14 @@ from mqspeak import args
 import sys
 
 class System:
-    """
+    """!
     System initialization object. This object encapsulates program configuration state
     defined by command line arguments and parsed configuration file.
     """
 
     @classmethod
     def initialize(cls):
-        """
+        """!
         Initiate system configuration.
         """
         cls.cliArgs = args.parse_args()
@@ -43,10 +43,10 @@ class System:
 
     @classmethod
     def getChannelConvertMapping(cls):
-        """
-        Get mapping for converting measurements for each channel
+        """!
+        Get mapping for converting measurements for each channel.
 
-        {channel: channelParamConverter}
+        @return {channel: channelParamConverter}
         """
         channelConvertMapping = {}
         for channel, _, updateMapping in cls.configCache.channelUpdateDescribtors:
@@ -55,15 +55,19 @@ class System:
 
     @classmethod
     def getBrokerListenDescriptors(cls):
-        """
-        Get list of tuples (broker, ["subscribeTopic"])
+        """!
+        Get list of tuples (broker, ["subscribeTopic"]).
+
+        @return (broker, ["subscribeTopic"])
         """
         return cls.configCache.listenDescriptors
 
     @classmethod
     def getUpdateBuffers(cls):
-        """
+        """!
         Get list of UpdateBuffer instances.
+
+        @return
         """
         updateBuffers = []
         for channel, _, updateMapping in cls.configCache.channelUpdateDescribtors:
@@ -74,8 +78,10 @@ class System:
 
     @classmethod
     def getChannelUpdateMapping(cls):
-        """
-        Get mapping {channel: updater}
+        """!
+        Get mapping {channel: updater}.
+
+        @return {channel: updater}
         """
         channelUpdateMapping = {}
         for channel, updater, _ in cls.configCache.channelUpdateDescribtors:
