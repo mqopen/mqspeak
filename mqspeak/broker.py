@@ -18,6 +18,21 @@ class Broker:
     Broker identification object.
     """
 
+    ## @var name
+    # Broker name.
+
+    ## @var host
+    # Broker IP address or hostname.
+
+    ## @var port
+    # Broker port number.
+
+    ## @var user
+    # Username to login to MQTT broker.
+
+    ## @var password
+    # Password to login to MQTT broker.
+
     def __init__(self, name, host="127.0.0.1", port=1883):
         """!
         Initiate broker object.
@@ -56,10 +71,25 @@ class Broker:
             raise AttributeError("Password must be non-zero length string")
 
     def __hash__(self):
+        """!
+        Calculate hash from Broker name, host and port.
+
+        @return Hash.
+        """
         return hash((self.name, self.host, self.port))
 
     def __str__(self):
+        """!
+        Convert object to string.
+
+        @return String.
+        """
         return "{} - {}:{}".format(self.name, self.host, self.port)
 
     def __repr__(self):
+        """!
+        Broker representation string.
+
+        @return Representation string.
+        """
         return "<{}>".format(self.__str__())
