@@ -28,6 +28,18 @@ class Channel:
     ThingSpeak channel identification object.
     """
 
+    ## @var channelType
+    # Type of channel.
+
+    ## @var name
+    # Channel name.
+
+    ## @var channelID
+    # Channel ID or None.
+
+    ## @var apiKey
+    # Channel API write key.
+
     def __init__(self, channelType, name, channelID, apiKey):
         """!
         Initiate channel object.
@@ -43,12 +55,27 @@ class Channel:
         self.apiKey = apiKey
 
     def __hash__(self):
+        """!
+        Calculate hash from channel name and API key.
+
+        @return Hash.
+        """
         return hash((self.name, self.apiKey))
 
     def __str__(self):
+        """!
+        Convert Channel to string.
+
+        @return String.
+        """
         return "{} [Id: {}, Key: {}]".format(self.name, self.channelID, self.apiKey)
 
     def __repr__(self):
+        """!
+        Convert Channel to representation string.
+
+        @return Representation string.
+        """
         return "<{}>".format(self.__str__())
 
 class ThingSpeakChannel(Channel):
@@ -83,6 +110,11 @@ class PhantChannel(Channel):
         Channel.__init__(self, ChannelType.phant, name, channelID, apiKey)
 
     def checkChannelIdentification(self, channelID):
+        """!
+        Check if channelID is not None
+
+        @throws ChannelException if channelID is None.
+        """
         if channelID is None:
             raise ChannelException("Phant channel must have identification")
 

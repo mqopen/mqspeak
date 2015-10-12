@@ -197,12 +197,18 @@ class ConfigCache:
     """
 
     def __init__(self):
+        """!
+        Initiate configuration cache object.
+        """
         self.listenDescriptors = []
         self.channelUpdateDescribtors = []
 
     def addBroker(self, broker, subscribtions):
         """!
         Add broker to configuration object.
+
+        @param broker
+        @param subscribtions
         """
         listenDescriptor = (broker, subscribtions)
         self.listenDescriptors.append(listenDescriptor)
@@ -211,22 +217,28 @@ class ConfigCache:
         """!
         Add channel to configuration object.
 
+        @param channel
+        @param updater
+        @param updateMapping
         @throws ConfigException When update mapping contains unknown broker.
         """
         channelUpdateDescribtor = (channel, updater, updateMapping)
         self.channelUpdateDescribtors.append(channelUpdateDescribtor)
 
     def check(self):
-        """
+        """!
+        @todo implement this method
+
         1. warning for unused brokers
         2. warning for not feasible topics in udate mappings.
         """
 
     def getBrokerByName(self, brokerName):
-        """
+        """!
         Get broker object identified by its't name.
 
-        raises KeyError if the name don't match to any stored broker object.
+        @param @brokerName
+        @throws ConfigException If the name don't match to any stored broker object.
         """
         for broker, subscribtions in self.listenDescriptors:
             if brokerName == broker.name:
@@ -238,11 +250,29 @@ class ChannelUpdaterFactory:
     Build channel.
     """
 
+    ## @var updaterCls
+    # Updater class.
+
+    ## @var updaterArgs
+    # Arguments to call updater class.
+
     def __init__(self, updaterCls, updaterArgs):
+        """!
+        Initiate ChannelUpdaterFactory object.
+
+        @param updaterCls
+        @param updaterArgs
+        """
         self.updaterCls = updaterCls
         self.updaterArgs = updaterArgs
 
     def build(self, channel):
+        """!
+        Build ChannelUpdater object.
+
+        @param channel
+        @return ChannelUpdater object.
+        """
         return self.updaterCls(channel, *self.updaterArgs)
 
 class UpdateMappingFactory:
@@ -250,21 +280,50 @@ class UpdateMappingFactory:
     Build UpdateMapping object.
     """
 
+    ## @var mapping
+    # Mapping.
+
     def __init__(self):
+        """!
+        Initiate UpdateMappingFactory object.
+        """
         self.mapping = {}
 
     def addMapping(self, brokerName, topic, field):
+        """!
+        Add build mapping.
+
+        @param brokerName
+        @param topic
+        @param field
+        """
         self.checkNewBrokerName(brokerName)
         self.mapping[brokerName].append((topic, field))
 
     def checkNewBrokerName(self, brokerName):
+        """!
+        Check if broker name exist in mapping. Create new if not.
+
+        @param brokerName
+        """
         if brokerName not in self.mapping:
             self.mapping[brokerName] = []
 
     def getNeededBrokers(self):
+        """
+        Get list of needed brokers.
+
+        @return List of broker names.
+        """
         return list(self.mapping.keys())
 
     def build(self, brokerNameResolver):
+        """!
+        Build UpdateMapping object.
+
+        @param brokerNameResolver Object for resolving broker names into Broker objects.
+        @return UpdateMapping object.
+        """
         mapping = {}
         for brokerName in self.mapping.keys():
             broker = brokerNameResolver.getBrokerByName(brokerName)

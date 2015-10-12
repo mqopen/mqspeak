@@ -22,6 +22,12 @@ class DataCollector:
     its content is given to ChannelUpdateSupervisor object.
     """
 
+    ## @var updateBuffers
+    # List of UpdateBuffer objects.
+
+    ## @var channelUpdateSupervisor
+    # UpdateSupervisor object.
+
     def __init__(self, updateBuffers, channelUpdateSupervisor):
         """!
         Initiate DataCollector object.
@@ -46,6 +52,7 @@ class DataCollector:
         """!
         Try to update buffer.
 
+        @param updateBuffer Buffer to update.
         @param dataIdentifier Data identification.
         @param data Payload.
         """
@@ -63,6 +70,15 @@ class UpdateBuffer:
     """!
     Object for buffering reqired data set before delivering them to ThingSpeak.
     """
+
+    ## @var channel
+    # Updated channel.
+
+    ## @var dataIdentifiers
+    # Iterable of DataIdentifier objects.
+
+    ## @var dataDict
+    # The {DataIdentifier: value} mapping.
 
     def __init__(self, channel, dataIdentifiers):
         """!
@@ -116,9 +132,19 @@ class UpdateBuffer:
             self.dataDict[dataIdentifier] = None
 
     def __str__(self):
+        """!
+        Convert UpdateBuffer object to string.
+
+        @return String.
+        """
         return "UpdateBuffer({}: {})".format(self.channel, self.dataIdentifiers)
 
     def __repr__(self):
+        """!
+        Convert UpdateBuffer object to representation string.
+
+        @return Representation string.
+        """
         return "<{}>".format(self.__str__())
 
 class TopicException(Exception):
