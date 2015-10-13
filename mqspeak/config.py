@@ -21,9 +21,15 @@ from mqspeak.data import DataIdentifier
 from mqspeak.updating import BlackoutUpdater, BufferedUpdater, AverageUpdater, OnChangeUpdater
 
 class ProgramConfig:
-    """
+    """!
     Program configuration parser.
     """
+
+    ## @var configFile
+    # Configuration file name.
+
+    ## @var parser
+    # Parser object.
 
     def __init__(self, configFile):
         """!
@@ -35,7 +41,7 @@ class ProgramConfig:
         self.parser = configparser.ConfigParser()
 
     def parse(self):
-        """
+        """!
         Parse config file.
 
         @return Configuration object.
@@ -52,11 +58,18 @@ class ProgramConfig:
         return configCache
 
     def checkForMandatorySections(self):
+        """!
+        Check if all necessary sections are mandatory.
+
+        @throws ConfigException if some section is missing.
+        """
         self.checkForSectionList(["Brokers", "Channels"])
 
     def getBrokers(self):
-        """
+        """!
         Get list of enabled brokers.
+
+        @return Iterable of brokers.
         """
         section = "Brokers"
         self.checkForEnabledOption(section)
@@ -69,10 +82,22 @@ class ProgramConfig:
             yield broker, subscribtions
 
     def checkForBrokerMandatoryOptions(self, brokerSection):
+        """!
+        Check for mandatory options of broker section.
+
+        @param brokerSection Broker section name.
+        @throws ConfigException If some option is missing.
+        """
         optionList = ["Topic"]
         self.checkForOptionList(brokerSection, optionList)
 
     def createBroker(self, brokerSection):
+        """!
+        Create broker object from broker section.
+
+        @param brokerSection Broker section name.
+        @return Broker object
+        """
         try:
             options = self.parser.options(brokerSection)
             host = self.parser.get(brokerSection, "Host", fallback = "127.0.0.1")
@@ -86,6 +111,13 @@ class ProgramConfig:
             raise ConfigException("Invalid broker port number: {}".format(self.parser.get(brokerSection, "Port")))
 
     def getBrokerCredentials(self, brokerSection):
+        """!
+        Get username and password of broker.
+
+        @param brokerSection Broker section name.
+        @return Tuple of (username, password).
+        @throws ConfigException If username or password is missing in configuration file.
+        """
         user = None
         password = None
         try:
@@ -99,14 +131,24 @@ class ProgramConfig:
         return user, password
 
     def getBrokerSubscribtions(self, brokerSection):
+        """!
+        Get list of broker subscribe topics.
+
+        @param brokerSection Broker section name.
+        @return List of broker subscribe topics.
+        @throws ConfigException If zero topics are specified.
+        """
         subscriptions = self.parser.get(brokerSection, "Topic").split()
         if len(subscriptions) == 0:
             raise ConfigException("At least one topic subscribe has to be defined")
         return subscriptions
 
     def getChannels(self):
-        """
+        """!
         Create list of enable channels.
+
+        @return Iterable of tuples of (channel, updaterFactory, updateMappingFactory).
+        @throws ConfigException
         """
         section = "Channels"
         self.checkForEnabledOption(section)
@@ -120,10 +162,23 @@ class ProgramConfig:
             yield channel, updaterFactory, updateMappingFactory
 
     def checkForChannelMandatoryOptions(self, channelSection):
+        """!
+        Check if channel section has all mandatoty options.
+
+        @param channelSection Channel section name.
+        @throws ConfigException If some options are missing.
+        """
         optionList = ["Key", "Type", "UpdateRate", "UpdateType", "UpdateFields"]
         self.checkForOptionList(channelSection, optionList)
 
     def createChannel(self, channelSection):
+        """!
+        Create channel object.
+
+        @param channelSection Channel section name.
+        @return Channel object.
+        @throws ConfigException If configuration specifies unknown channel type.
+        """
         channelID = self.parser.get(channelSection, "Id", fallback = None)
         writeKey = self.parser.get(channelSection, "Key")
         channelType = self.parser.get(channelSection, "Type")
@@ -135,6 +190,13 @@ class ProgramConfig:
             raise ConfigException("Unsupported channel type: {}".format(channelType))
 
     def getChannelUpdater(self, channelSection):
+        """!
+        Create channel updaterFactory.
+
+        @param channelSection Channel section name.
+        @return ChannelUpdaterFactory object for that channel.
+        @throws ConfigException If channel specifies invalid update interval.
+        """
         try:
             updateRate = datetime.timedelta(seconds = self.parser.getint(channelSection, "UpdateRate"))
             updaterName = self.parser.get(channelSection, "UpdateType")
@@ -144,6 +206,14 @@ class ProgramConfig:
             raise ConfigException("Invalid update rate interval: {}".format(self.parser.get(channelSection, "UpdateRate")))
 
     def createUpdaterFactory(self, updaterName, updateRate):
+        """!
+        Create updater factory based on updater name.
+
+        @param updaterName Updater name.
+        @param updateRate Update interval.
+        @return ChannelUpdaterFactory object.
+        @throws ConfigException If unknown updater name is specified in config file.
+        """
         updaterCls = None
         if updaterName == "blackout":
             updaterCls = BlackoutUpdater
@@ -159,10 +229,22 @@ class ProgramConfig:
         return updaterCls, updaterArgs
 
     def getDataFieldMapping(self, channelSection):
+        """!
+        Create field mapping for channel.
+
+        @param channelSection Channel section name.
+        @return Data field mapping.
+        """
         updaterSection = self.parser.get(channelSection, "UpdateFields")
         return self.createDataFieldMapping(updaterSection)
 
     def createDataFieldMapping(self, updateSection):
+        """!
+        Create data field mapping from update section.
+
+        @param updateSection Update section name.
+        @return Data field mapping.
+        """
         updateMappingFactory = UpdateMappingFactory()
         for mappingOption in self.parser.options(updateSection):
             optionValue = self.parser.get(updateSection, mappingOption).split()
@@ -173,21 +255,53 @@ class ProgramConfig:
         return updateMappingFactory
 
     def checkForEnabledOption(self, section):
+        """!
+        Check for "Enabled" option in given section.
+
+        @param section Section name.
+        @throws ConfigException If "Enabled" option is missing in section.
+        """
         self.checkForOption(section, "Enabled")
 
     def checkForSectionList(self, sectionList):
+        """!
+        Check for list of sections in configuration file.
+
+        @param sectionList
+        @throws ConfigException
+        """
         for section in sectionList:
             self.checkForSection(section)
 
     def checkForSection(self, section):
+        """!
+        Check for section in configuration file.
+
+        @param section
+        @throws ConfigException
+        """
         if not self.parser.has_section(section):
             raise ConfigException("{} section is missing".format(section))
 
     def checkForOptionList(self, section, optionList):
+        """!
+        Check for list of options in single section.
+
+        @param section
+        @param optionList
+        @throws ConfigException
+        """
         for option in optionList:
             self.checkForOption(section, option)
 
     def checkForOption(self, section, option):
+        """!
+        Check for option in configuration file.
+
+        @param section Section name.
+        @param option Option name.
+        @throws ConfigException If given section doesn!t contain specified option.
+        """
         if not self.parser.has_option(section, option):
             raise ConfigException("Section {}: {} option is missing".format(section, option))
 
@@ -195,6 +309,12 @@ class ConfigCache:
     """!
     Cache object for storing app configuration.
     """
+
+    ## @var listenDescriptors
+    # Listen descriptors.
+
+    ## @var channelUpdateDescribtors
+    # Update descriptors.
 
     def __init__(self):
         """!
