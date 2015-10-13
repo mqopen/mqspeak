@@ -20,6 +20,12 @@ class Measurement:
     Measured data mapping in DataIdentifier: value format with corresponding timestamp.
     """
 
+    ## @var fields
+    # Measurement fields.
+
+    ## @var time
+    # Measurement timestamp.
+
     def __init__(self, fields, time):
         """!
         Initiate measurement object.
@@ -38,23 +44,42 @@ class Measurement:
         """!
         Build measurement object with current time.
 
+        @param cls
         @param fields Maping {dataIdentifier: vaue}.
         """
         return cls(fields, datetime.datetime.now())
 
     def __str__(self):
+        """!
+        Convert object to string.
+
+        @return String.
+        """
         return "[{}] {}".format(self.time, self.fields)
 
     def __repr__(self):
+        """!
+        Convert object to representation string.
+
+        @return representation string.
+        """
         return "<{}>".format(self.__str__())
 
     def __len__(self):
+        """!
+        Get number of measurement fields.
+
+        @return Number of fields.
+        """
         return len(self.fields)
 
 class MeasurementParamConverter:
     """!
     Convert data measurement into ThingSpeak fields for single channel.
     """
+
+    ## @var dataFieldsMapping
+    # Mapping of data fields.
 
     def __init__(self, dataFieldsMapping):
         """!
@@ -79,15 +104,31 @@ class MeasurementParamConverter:
         return params
 
     def __str__(self):
+        """!
+        Convert object to string.
+
+        @return String.
+        """
         return "<Param Converter: {}>".format(str(self.dataFieldsMapping))
 
     def __repr__(self):
+        """!
+        Convert object to representation string.
+
+        @return representation string.
+        """
         return self.__str__()
 
 class DataIdentifier:
     """!
     Wrapper object to convert broker and topic into uniquie identification key
     """
+
+    ## @var broker
+    # Broker object.
+
+    ## @var topic
+    # Topic object.
 
     def __init__(self, broker, topic):
         """!
@@ -100,15 +141,36 @@ class DataIdentifier:
         self.topic = topic
 
     def __hash__(self):
+        """!
+        Calculate hash of DataIdentifier object.
+
+        @return Hash.
+        """
         return hash((self.broker, self.topic))
 
     def __str__(self):
+        """!
+        Convert object to string.
+
+        @return String.
+        """
         return "<{}: {}>".format(self.broker, self.topic)
 
     def __repr__(self):
+        """!
+        Convert object to representation string.
+
+        @return representation string.
+        """
         return self.__str__()
 
     def __eq__(self, other):
+        """!
+        Check if DataIdentifier object is equal to another.
+
+        @param other Other object.
+        @return True if other object is instance of DataIdentifier and contains same values, False otherwise.
+        """
         if not isinstance(other, DataIdentifier):
             return False
         return self.broker == other.broker and self.topic == other.topic
