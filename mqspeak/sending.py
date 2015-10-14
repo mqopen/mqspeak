@@ -27,6 +27,18 @@ class ChannelUpdateDispatcher:
     Dispatching new update threads.
     """
 
+    ## @var channelSenders
+    # Channel sendres mapping.
+
+    ## @var dispatchLock
+    # Mutual exclusion for update job dispatching.
+
+    ## @var running
+    # Keep track if dispatcher is running.
+
+    ## @var updateQueue
+    # Queue of pending updates.
+
     def __init__(self, channelConvertMapping):
         """!
         Initiate ChannelUpdateDispatcher object.
@@ -115,6 +127,9 @@ class BaseSender:
     Sender base class.
     """
 
+    ## @var channelConvertMapping
+    # Mapping {channel: channelParamConverter}.
+
     def __init__(self, channelConvertMapping):
         """!
         Initiate Sender base class.
@@ -125,7 +140,7 @@ class BaseSender:
 
     def send(self, channel,  measurement):
         """!
-        Send measurement to ThinkSpeak.
+        Send measurement.
 
         @param channel
         @param measurement
@@ -181,6 +196,9 @@ class ThingSpeakSender(BaseSender):
     """
 
     def fetch(self, channel, measurement):
+        """!
+        @copydoc BaseSender::fetch()
+        """
         body = self.channelConvertMapping[channel].convert(measurement)
         body.update({'api_key': channel.apiKey})
         bodyEncoded = urllib.parse.urlencode(body)
@@ -194,6 +212,9 @@ class ThingSpeakSender(BaseSender):
         return status, reason, responseBytes
 
     def checkSendResult(self, result):
+        """!
+        @copydoc BaseSender::checkSendResult()
+        """
         (status, reason, data) = result
         if status != 200:
             print("Response status error: {} {} - {}.".format(status, reason, data), file = sys.stderr)
@@ -209,6 +230,9 @@ class PhantSender(BaseSender):
     """
 
     def fetch(self, channel, measurement):
+        """!
+        @copydoc BaseSender::fetch()
+        """
         body = self.channelConvertMapping[channel].convert(measurement)
         bodyEncoded = urllib.parse.urlencode(body)
         headers = {"Phant-Private-Key": channel.apiKey,
@@ -223,6 +247,9 @@ class PhantSender(BaseSender):
         return status, reason, responseBytes
 
     def checkSendResult(self, result):
+        """!
+        @copydoc BaseSender::checkSendResult()
+        """
         (status, reason, data) = result
         if status != 200:
             print("Response status error: {} {} - {}.".format(status, reason, data), file = sys.stderr)
@@ -233,6 +260,21 @@ class SendRunner:
     """!
     Callable wrapper class for sending data to ThingSpeak in separate thread.
     """
+
+    ## @var sender
+    # Sender object. This object must implement send(channel,  measurement) method.
+
+    ## @var channel
+    # Channel description object.
+
+    ## @var measurement
+    # Measured data.
+
+    ## @var updater
+    # Updater object which will be called by dispatcher after send job is done.
+
+    ## @var jobNotify
+    # Listener object called after data send.
 
     def __init__(self, sender, channel, measurement, updater, jobNotify):
         """!
@@ -264,6 +306,9 @@ class UpdateResult:
     """!
     Encapsulate update result.
     """
+
+    ## @var success
+    # Flag if update was successful.
 
     def __init__(self, success):
         """!

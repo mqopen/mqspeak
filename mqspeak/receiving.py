@@ -26,6 +26,15 @@ class BrokerThreadManager:
     Manage broker receiving threads
     """
 
+    ## @var idManager
+    # Object responsible for managing receiver IDs.
+
+    ## @var clients
+    # Iterable of of receiver client objects.
+
+    ## @var isThreadsRunning
+    # Keep track if receiver threads are running.
+
     def __init__(self, listenDescriptors, dataCollector):
         """!
         Initiate BrokerThreadManager oject.
@@ -64,17 +73,36 @@ class BrokerReceiver:
     Broker receiving thread
     """
 
+    ## @var clientID
+    # Client identification.
+
+    ## @var broker
+    # Broker object.
+
+    ## @var subsciption
+    # Broker subscribtion.
+
+    ## @var dataCollector
+    # Data collector object.
+
+    ## @var client
+    # MQTT client object.
+
+
     def __init__(self, clientID, listenDescriptor, dataCollector):
         """!
         Initiate BrokerReceiver object.
 
+        @param clientID
         @param listenDescriptor Set containing following fields: (broker, subscription).
             @li broker: broker descriptor object
             @li subscription:
         @param dataCollector Listener object to deliver received updates.
         """
         self.clientID = clientID
-        (self.broker, self.subsciption) = listenDescriptor
+        broker, subsciption = listenDescriptor
+        self.broker = broker
+        self.subsciption = subsciption
         self.dataCollector = dataCollector
         self.client = mqtt.Client(client_id = str(self.clientID))
         self._registerCallbacks()
@@ -90,6 +118,9 @@ class BrokerReceiver:
         self.client.on_log = self.onLog
 
     def __call__(self):
+        """!
+        Broker receiver thread code.
+        """
         keepAliveInterval = 60
         self.client.connect(self.broker.host, self.broker.port, keepAliveInterval)
         self.client.loop_forever()
@@ -193,6 +224,15 @@ class BrokerReceiverID:
     Broker receiver thread ID.
     """
 
+    ## @var hostname
+    # Machine hostname
+
+    ## @var pid
+    # Current process PID
+
+    ## @var receiverID
+    # Receiver thread ID.
+
     def __init__(self, hostname, pid, receiverID):
         """!
         Create broker receiver thread lient ID.
@@ -206,9 +246,19 @@ class BrokerReceiverID:
         self.receiverID = receiverID
 
     def __str__(self):
+        """!
+        Convert BrokerReceiverID to string.
+
+        @return String.
+        """
         return "mqspeak-{}-{}-{}".format(self.hostname, self.pid, self.receiverID)
 
     def __repr__(self):
+        """!
+        Convert BrokerReceiverID to representation string.
+
+        @return Representation string.
+        """
         return "<{}>".format(self.__str__())
 
 class BrokerReceiverIDManager:
@@ -216,7 +266,19 @@ class BrokerReceiverIDManager:
     Manage receiver IDs.
     """
 
+    ## @var hostname
+    # Machine hostname
+
+    ## @var pid
+    # Current process PID
+
+    ## @var receiverCounter
+    # Keep track how many broker IDs were created.
+
     def __init__(self):
+        """!
+        Initiate BrokerReceiverIDManager object.
+        """
         self.hostname = socket.gethostname()
         self.pid = os.getpid()
         self.receiverCounter = 0
