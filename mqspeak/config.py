@@ -49,8 +49,8 @@ class ProgramConfig:
         self.parser.read(self.configFile)
         self.checkForMandatorySections()
         configCache = ConfigCache()
-        for broker, subscribtions in self.getBrokers():
-            configCache.addBroker(broker, subscribtions)
+        for broker, subscriptions in self.getBrokers():
+            configCache.addBroker(broker, subscriptions)
         for channel, updaterFactory, updateMappingFactory in self.getChannels():
             updater = updaterFactory.build(channel)
             updateMapping = updateMappingFactory.build(configCache)
@@ -78,8 +78,8 @@ class ProgramConfig:
         for brokerSection in brokerSections:
             self.checkForBrokerMandatoryOptions(brokerSection)
             broker = self.createBroker(brokerSection)
-            subscribtions = self.getBrokerSubscribtions(brokerSection)
-            yield broker, subscribtions
+            subscriptions = self.getBrokerSubscribtions(brokerSection)
+            yield broker, subscriptions
 
     def checkForBrokerMandatoryOptions(self, brokerSection):
         """!
@@ -323,14 +323,14 @@ class ConfigCache:
         self.listenDescriptors = []
         self.channelUpdateDescribtors = []
 
-    def addBroker(self, broker, subscribtions):
+    def addBroker(self, broker, subscriptions):
         """!
         Add broker to configuration object.
 
         @param broker
-        @param subscribtions
+        @param subscriptions
         """
-        listenDescriptor = (broker, subscribtions)
+        listenDescriptor = (broker, subscriptions)
         self.listenDescriptors.append(listenDescriptor)
 
     def addChannel(self, channel, updater, updateMapping):
@@ -360,7 +360,7 @@ class ConfigCache:
         @param @brokerName
         @throws ConfigException If the name don't match to any stored broker object.
         """
-        for broker, subscribtions in self.listenDescriptors:
+        for broker, subscriptions in self.listenDescriptors:
             if brokerName == broker.name:
                 return broker
         raise ConfigException("Unknown broker name: {}".format(brokerName))
