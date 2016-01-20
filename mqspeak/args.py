@@ -22,7 +22,7 @@ def create_parser():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-c', '--config',
                         help='path to configuration file',
-                        default="/etc/mqttbridge.conf")
+                        default="/etc/mqspeak.conf")
     parser.add_argument('-v', '--verbose',
                         help='verbose',
                         action='store_true')
