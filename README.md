@@ -90,7 +90,7 @@ option (default `/etc/mqspeak.conf`). This is sample configuration file:
     state = door-broker sensors/door
 
 Configuration file has two mandatory sections: `[Brokers]` and `[Channels]`, each with
-one `[Enabled]` option. These options contains space separated broker and channel
+one `Enabled` option. These options contains space separated broker and channel
 section names.
 
 #### Broker section
