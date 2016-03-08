@@ -4,3 +4,4 @@ html/
 latex/
 mqspeak.egg-info/
 dist/
+build/
