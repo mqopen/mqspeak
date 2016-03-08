@@ -2,3 +2,5 @@ __pycache__/
 doxygen_sqlite3.db
 html/
 latex/
+mqspeak.egg-info/
+dist/
