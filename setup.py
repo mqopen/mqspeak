@@ -53,4 +53,9 @@ setup(
         'Topic :: Internet',
     ],
     keywords = 'iot internetofthings mqopen mqtt sensors thingspeak phant',
+    entry_points = {
+        "console_scripts": [
+            "mqspeak = mqspeak.__main__:main"
+        ]
+    }
 )
