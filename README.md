@@ -8,17 +8,13 @@ multiple channels.
 This is part of my IoT project. You can
 read more about it on my [blog](http://buben19.blogspot.com/).
 
-### Dependencies
+## Install
 
-Application runs on python3. It also requires [paho](https://www.eclipse.org/paho/clients/python/)
-MQTT client library. On Debian system install necessary dependencies with
-following commands:
+Application can be installed with following command:
 
-    $ sudo apt-get update
-    $ sudo apt-get install python3 python3-pip
-    $ sudo pip3 install paho-mqtt
+    $ sudo pip install mqspeak
 
-### Configuration
+## Configuration
 
 mqspeak is configured using configuration file specified with `-c` or `--config`
 option (default `/etc/mqspeak.conf`). This is sample configuration file:
@@ -93,7 +89,7 @@ Configuration file has two mandatory sections: `[Brokers]` and `[Channels]`, eac
 one `Enabled` option. These options contains space separated broker and channel
 section names.
 
-#### Broker section
+### Broker section
 
 Broker section has to define one mandatory `[Topic]` option, which is space separated
 list of MQTT topic subscriptions. Full list of possible options in broker section:
@@ -104,7 +100,7 @@ list of MQTT topic subscriptions. Full list of possible options in broker sectio
 - `Password` - Password.
 - `Topic` - Space separated list of topic subscriptions. Mandatory option.
 
-#### Channel section
+### Channel section
 
 Each channel section has to define `Key`, `UpdateRate` and `UpdateType` options.
 
@@ -128,14 +124,14 @@ Each channel section has to define `Key`, `UpdateRate` and `UpdateType` options.
     sent after `UpdateRate` interval expires. **_Not implemented yet._**
 - `UpdateFields` - Specify section which defines updates for this channel. Mandatory option.
 
-#### UpdateFields section
+### UpdateFields section
 
 UpdateFields section consists of any number of options. Each option key specifies
 field name. Its value must be space separated name of broker section and topic.
 
 For ThinkSpeak channel, only option keys `Field1` ... `Field8` are valid.
 
-### Questions
+## Questions
 
 - **mqspeak runs in foreground only.** - Yes, there is no double fork combo to run
   mqspeak in background. I use systemd init and I prefer to run all services as simple
