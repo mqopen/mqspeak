@@ -13,62 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from mqspeak.data import DataIdentifier
-from mqspeak.system import System
 import os
 import paho.mqtt.client as mqtt
 import socket
 import sys
 import threading
+from mqreceive.data import DataIdentifier
+from mqreceive.receiving import BaseBrokerReceiver
+from mqspeak.system import System
 
-class BrokerThreadManager:
-    """!
-    Manage broker receiving threads
-    """
-
-    ## @var idManager
-    # Object responsible for managing receiver IDs.
-
-    ## @var clients
-    # Iterable of of receiver client objects.
-
-    ## @var isThreadsRunning
-    # Keep track if receiver threads are running.
-
-    def __init__(self, listenDescriptors, dataCollector):
-        """!
-        Initiate BrokerThreadManager oject.
-
-        @param listenDescriptors Listen descriptor iterable object.
-            @li broker: broker descriptor object
-            @li subsriptionIterable:
-        @param dataCollector DataCollector object.
-        """
-        self.idManager = BrokerReceiverIDManager()
-        self.clients = [BrokerReceiver(self.idManager.createReceiverID(), x, dataCollector) for x in listenDescriptors]
-        self.isThreadsRunning = False
-
-    def start(self):
-        """!
-        Start all receiving threads.
-        """
-        if self.isThreadsRunning:
-            raise ThreadManagerException("Broker threads are already running")
-        self.isThreadsRunning = True
-        for client in self.clients:
-            threading.Thread(target = client).start()
-
-    def stop(self):
-        """!
-        Stop all receving threads.
-        """
-        if not self.isThreadsRunning:
-            raise ThreadManagerException("Broker threads are already stopped")
-        self.isThreadsRunning = False
-        for client in self.clients:
-            client.stop()
-
-class BrokerReceiver:
+class BrokerReceiver(BaseBrokerReceiver):
     """!
     Broker receiving thread
     """

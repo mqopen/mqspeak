@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 from mqspeak.collecting import UpdateBuffer
 from mqspeak.config import ProgramConfig, ConfigException
 from mqspeak.data import MeasurementParamConverter
 from mqspeak import args
-import sys
 
 class System:
     """!

@@ -15,9 +15,9 @@
 
 import configparser
 import datetime
-from mqspeak.broker import Broker
+from mqreceive.broker import Broker
 from mqspeak.channel import ThingSpeakChannel, PhantChannel
-from mqspeak.data import DataIdentifier
+from mqreceive.data import DataIdentifier
 from mqspeak.updating import BlackoutUpdater, BufferedUpdater, AverageUpdater, OnChangeUpdater
 
 class ProgramConfig:

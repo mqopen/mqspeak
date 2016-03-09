@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from mqreceive.data import DataIdentifier
 from mqspeak.data import Measurement
 
 class DataCollector:
@@ -37,6 +38,9 @@ class DataCollector:
         """
         self.updateBuffers = updateBuffers
         self.channelUpdateSupervisor = channelUpdateSupervisor
+
+    def onMessage(self, broker, topic, data):
+        self.onNewData(DataIdentifier(broker, topic), data);
 
     def onNewData(self, dataIdentifier, data):
         """!

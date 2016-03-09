@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from mqspeak.data import Measurement
 import datetime
 import threading
 import time
 import queue
 import sys
+from mqspeak.data import Measurement
 
 class ChannnelUpdateSupervisor:
     """!
