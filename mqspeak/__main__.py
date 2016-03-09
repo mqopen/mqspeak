@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#
 # Copyright (C) Ivo Slanina <ivo.slanina@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify

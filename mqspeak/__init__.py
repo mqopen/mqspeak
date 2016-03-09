@@ -16,3 +16,4 @@
 __version__ = "0.1.0"
 __author__ = "Ivo Slanina"
 __email__ = "ivo.slanina@gmail.com"
+__url__ = "https://github.com/buben19/mqspeak"

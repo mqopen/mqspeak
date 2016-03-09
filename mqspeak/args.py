@@ -14,18 +14,29 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import mqspeak
+
+class HelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
+    def __init__(self, prog, indent_increment=2, max_help_position=64, width=180):
+        argparse.ArgumentDefaultsHelpFormatter.__init__(self, prog, indent_increment, max_help_position, width)
 
 def create_parser():
     parser = argparse.ArgumentParser(
-        description="MQTT to ThingSpeak bridge",
-        epilog="Copyright (C) Ivo Slanina <ivo.slanina@gmail.com> https://github.com/buben19/mqspeak",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        description="MQTT bridge v{}".format(mqspeak.__version__),
+        epilog="Copyright (C) {} <{}> {}".format(
+            mqspeak.__author__,
+            mqspeak.__email__,
+            mqspeak.__url__),
+        formatter_class=HelpFormatter)
     parser.add_argument('-c', '--config',
                         help='path to configuration file',
                         default="/etc/mqspeak.conf")
     parser.add_argument('-v', '--verbose',
                         help='verbose',
                         action='store_true')
+    parser.add_argument('--version',
+                        action='version',
+                        version='{}'.format(mqspeak.__version__))
     return parser
 
 def parse_args():
