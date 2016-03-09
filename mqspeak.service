@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/bin/mqspeak
+ExecStart=/usr/local/bin/mqspeak
 Restart=always
 
 [Install]
