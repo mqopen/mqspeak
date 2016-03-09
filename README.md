@@ -12,7 +12,7 @@ read more about it on my [blog](http://buben19.blogspot.com/).
 
 Application can be installed with following command:
 
-    $ sudo pip install mqspeak
+    $ sudo pip3 install mqspeak
 
 ## Configuration
 
