@@ -13,4 +13,4 @@
 
 ## v0.1.1
 
- - Mutexes are always released in finally blocks. Avoiding possible deadlocks.
+ - Mutexes are always released in finally block. Avoiding possible deadlocks.
