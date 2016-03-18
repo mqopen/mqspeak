@@ -65,7 +65,7 @@ class ChannnelUpdateSupervisor:
 
 class BaseUpdater:
     """!
-    Updater object base class!
+    Updater base class.
     """
 
     ## @var channel
@@ -90,8 +90,8 @@ class BaseUpdater:
         """!
         Initiate BaseUpdater object.
 
-        @param channel Updated channel.
-        @param updateInterval Update interval.
+        @param channel Update Channel object.
+        @param updateInterval timedelta object defining update interval.
         """
         self.channel = channel
         self.updateInterval = updateInterval
@@ -114,8 +114,10 @@ class BaseUpdater:
         @param measurement
         """
         self.updateLock.acquire()
-        self.handleAvailableData(measurement)
-        self.updateLock.release()
+        try:
+            self.handleAvailableData(measurement)
+        finally:
+            self.updateLock.release()
 
     def runUpdate(self, measurement):
         """!
@@ -134,8 +136,10 @@ class BaseUpdater:
         @param measurement
         """
         self.updateLock.acquire()
-        self.runUpdate(measurement)
-        self.updateLock.release()
+        try:
+            self.runUpdate(measurement)
+        finally:
+            self.updateLock.release()
 
     def notifyUpdateResult(self, result):
         """!
@@ -144,11 +148,13 @@ class BaseUpdater:
         @param result UpdateResult object.
         """
         self.updateLock.acquire()
-        self.isUpdateRunning = False
-        if result.wasSuccessful():
-            self.restartUpdateIntervalCounter()
-        self.resolveUpdateResult(result)
-        self.updateLock.release()
+        try:
+            self.isUpdateRunning = False
+            if result.wasSuccessful():
+                self.restartUpdateIntervalCounter()
+            self.resolveUpdateResult(result)
+        finally:
+            self.updateLock.release()
 
     def stop(self):
         """!
@@ -241,17 +247,19 @@ class SynchronousUpdater(BaseUpdater):
         @copydoc BaseUpdater::handleAvailableData()
         """
         self.scheduleLock.acquire()
-        if not self.isUpdateScheduled:
-            if self.isUpdateRunning:
-                # New data is available but update is still running.
-                # Store data in buffer and schedule new update after current update is done.
-                self.updateBuffer(measurement)
+        try:
+            if not self.isUpdateScheduled:
+                if self.isUpdateRunning:
+                    # New data is available but update is still running.
+                    # Store data in buffer and schedule new update after current update is done.
+                    self.updateBuffer(measurement)
+                else:
+                    self.runUpdate(measurement)
             else:
-                self.runUpdate(measurement)
-        else:
-            # Update job is already scheduled. Just update buffer.
-            self.updateBuffer(measurement)
-        self.scheduleLock.release()
+                # Update job is already scheduled. Just update buffer.
+                self.updateBuffer(measurement)
+        finally:
+            self.scheduleLock.release()
 
     def resolveUpdateResult(self, result):
         """!
@@ -260,16 +268,20 @@ class SynchronousUpdater(BaseUpdater):
         # Schedule new update job. Just for case that new data arrive before time
         # interval expires.
         self.scheduleLock.acquire()
-        self.scheduleUpdateJob()
-        self.scheduleLock.release()
+        try:
+            self.scheduleUpdateJob()
+        finally:
+            self.scheduleLock.release()
 
     def updateBuffer(self, measurement):
         """
         Update buffered measurement.
         """
         self.bufferLock.acquire()
-        self.storeUpdateData(measurement)
-        self.bufferLock.release()
+        try:
+            self.storeUpdateData(measurement)
+        finally:
+            self.bufferLock.release()
 
     def scheduleUpdateJob(self):
         """
@@ -287,12 +299,14 @@ class SynchronousUpdater(BaseUpdater):
         Callback method called when scheduler expires.
         """
         self.scheduleLock.acquire()
-        self.executors.discard(executor)
-        self.isUpdateScheduled = False
-        if self.isDataBuffered():
-            data = self.pullMeasurement()
-            self.runUpdateLocked(data)
-        self.scheduleLock.release()
+        try:
+            self.executors.discard(executor)
+            self.isUpdateScheduled = False
+            if self.isDataBuffered():
+                data = self.pullMeasurement()
+                self.runUpdateLocked(data)
+        finally:
+            self.scheduleLock.release()
 
     def pullMeasurement(self):
         """!
@@ -302,9 +316,11 @@ class SynchronousUpdater(BaseUpdater):
         """
         d = None
         self.bufferLock.acquire()
-        d = self.getMeasurement()
-        self.resetBuffer()
-        self.bufferLock.release()
+        try:
+            d = self.getMeasurement()
+            self.resetBuffer()
+        finally:
+            self.bufferLock.release()
         return d
 
     def stop(self):

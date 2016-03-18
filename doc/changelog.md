@@ -10,3 +10,7 @@
  - Supported updating multiple channels.
  - Supported receiving data from multiple brokers.
  - Configured with .ini style config file.
+
+## v0.1.1
+
+ - Mutexes are always released in finally blocks. Avoiding possible deadlocks.
