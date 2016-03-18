@@ -14,3 +14,4 @@
 ## v0.1.1
 
  - Mutexes are always released in finally block. Avoiding possible deadlocks.
+ - Changed setup.py long description to content of README.md file.

@@ -28,7 +28,7 @@ setup(
     author = mqspeak.__author__,
     author_email = mqspeak.__email__,
     description = "MQTT bridge",
-    long_description = "Tool for collecting MQTT traffic and sending it to ThingSpeak or Phant servers.",
+    long_description = open("README.md").read(),
     license = "GPLv3",
     classifiers = [
         'Development Status :: 3 - Alpha',
