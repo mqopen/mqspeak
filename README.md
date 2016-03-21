@@ -112,7 +112,7 @@ Each channel section has to define `Key`, `UpdateRate` and `UpdateType` options.
  - `UpdateRate` - Channel update interval in seconds. Currently, ThinkSpeak allows
    interval 15 seconds or greater. Mandatory option.
  - `WaitInterval` - Maximum interval to wait for remaining data to arrive. When set to
-    zero, wait forever (default). See 'Update waiting' for more details.
+    zero, wait forever (default). See **Update waiting** for more details.
  - `UpdateType` - Channel update type. Possible values are `blackout`, `buffered`,
    `average` and `onchange`. Mandatory option.
    - `blackout` - Until `UpdateRate` interval is expired, any incoming data are
@@ -137,13 +137,13 @@ out even incomplete channel update.
 
 Waiting scenario can be divided into following cases:
 
- - `UpdateRate` condition is met but there are no data - Wait mechanism is not activated
+ - **`UpdateRate` condition is met but there are no data.** Wait mechanism is not activated
     until some data arrives. After it received first part of channel update, it will wait
     defined time to seconds to try collect remaining data. After `WaitInterval` expires,
     data will be send.
- - Data arrives before `UpdateRate` condition is met - Wating is triggered immediately.
+ - **Data arrives before `UpdateRate` condition is met.** Wating is triggered immediately.
     After `WaitInterval` expires, data will be send.
- - All required data are collected before `UpdateRate` condition is met - There is no
+ - **All required data are collected before `UpdateRate` condition is met.** There is no
     need to activate update waiting. Simply send data.
 
 ### UpdateFields section
