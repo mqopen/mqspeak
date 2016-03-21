@@ -94,35 +94,57 @@ section names.
 Broker section has to define one mandatory `[Topic]` option, which is space separated
 list of MQTT topic subscriptions. Full list of possible options in broker section:
 
-- `Host` - Broker IP address or hostname (default 127.0.0.1).
-- `Port` - Broker port (default 1883).
-- `User` - Username.
-- `Password` - Password.
-- `Topic` - Space separated list of topic subscriptions. Mandatory option.
+ - `Host` - Broker IP address or hostname (default 127.0.0.1).
+ - `Port` - Broker port (default 1883).
+ - `User` - Username.
+ - `Password` - Password.
+ - `Topic` - Space separated list of topic subscriptions. Mandatory option.
 
 ### Channel section
 
 Each channel section has to define `Key`, `UpdateRate` and `UpdateType` options.
 
-- `Id` - Channel ID. This field is mandatory for Phant channels.
-- `Key` - Channel API write key. Mandatory option.
-- `Type` - Specify channel type. Mandatory option. Following types are supported:
-  - `thingspeak` - [ThinkSpeak](https://thingspeak.com/) channel.
-  - `phant` - [Phant](http://phant.io/) channel.
-- `UpdateRate` - Channel update interval in seconds. Currently, ThinkSpeak allows
-  interval 15 seconds or greater. Mandatory option.
-- `UpdateType` - Channel update type. Possible values are `blackout`, `buffered`,
-  `average` and `onchange`. Mandatory option.
-  - `blackout` - Until `UpdateRate` interval is expired, any incoming data are
-    ignored. First data received after interval expiration are sent to ThingSpeak.
-  - `buffered` - Incoming data are buffered during `UpdateRate` interval. After
-    this interval expires, most recent values are immediately sent.
-  - `average` - Similar to `buffered` but mqspeak calculates average value of these
-    data. Any data which cannot be converted into real numbers are ignored. Channel
-    is immediately updated after `UpdateRate` interval is expired.
-  - `onchange` - Data are marked with timestamp and stored in queue. Each item is
-    sent after `UpdateRate` interval expires. **_Not implemented yet._**
-- `UpdateFields` - Specify section which defines updates for this channel. Mandatory option.
+ - `Id` - Channel ID. This field is mandatory for Phant channels.
+ - `Key` - Channel API write key. Mandatory option.
+ - `Type` - Specify channel type. Mandatory option. Following types are supported:
+   - `thingspeak` - [ThinkSpeak](https://thingspeak.com/) channel.
+   - `phant` - [Phant](http://phant.io/) channel.
+ - `UpdateRate` - Channel update interval in seconds. Currently, ThinkSpeak allows
+   interval 15 seconds or greater. Mandatory option.
+ - `WaitInterval` - Maximum interval to wait for remaining data to arrive. When set to
+    zero, wait forever (default). See 'Update waiting' for more details.
+ - `UpdateType` - Channel update type. Possible values are `blackout`, `buffered`,
+   `average` and `onchange`. Mandatory option.
+   - `blackout` - Until `UpdateRate` interval is expired, any incoming data are
+     ignored. First data received after interval expiration are sent to ThingSpeak.
+   - `buffered` - Incoming data are buffered during `UpdateRate` interval. After
+     this interval expires, most recent values are immediately sent.
+   - `average` - Similar to `buffered` but mqspeak calculates average value of these
+     data. Any data which cannot be converted into real numbers are ignored. Channel
+     is immediately updated after `UpdateRate` interval is expired.
+   - `onchange` - Data are marked with timestamp and stored in queue. Each item is
+     sent after `UpdateRate` interval expires. **_Not implemented yet._**
+ - `UpdateFields` - Specify section which defines updates for this channel. Mandatory option.
+
+#### Update waiting
+
+When channel update consists of data from multiple sensors, it may happen that one
+sensor die. By default channel never be updated until data from all sensors arrives.
+Inactive sensor causes channel update will be stalled.
+
+When update waiting enabled, mqspeak will wait defined about of seconds and then sends
+out even incomplete channel update.
+
+Waiting scenario can be divided into following cases:
+
+ - `UpdateRate` condition is met but there are no data - Wait mechanism is not activated
+    until some data arrives. After it received first part of channel update, it will wait
+    defined time to seconds to try collect remaining data. After `WaitInterval` expires,
+    data will be send.
+ - Data arrives before `UpdateRate` condition is met - Wating is triggered immediately.
+    After `WaitInterval` expires, data will be send.
+ - All required data are collected before `UpdateRate` condition is met - There is no
+    need to activate update waiting. Simply send data.
 
 ### UpdateFields section
 
@@ -133,7 +155,7 @@ For ThinkSpeak channel, only option keys `Field1` ... `Field8` are valid.
 
 ## Questions
 
-- **mqspeak runs in foreground only.** - Yes, there is no double fork combo to run
-  mqspeak in background. I use systemd init and I prefer to run all services as simple
-  systemd units, which runs in foreground. Sorry about that.
-- **It uses python3. Is python 2.x supported?** - No, I don't plan to support python 2.x.
+ - **mqspeak runs in foreground only.** - Yes, there is no double fork combo to run
+   mqspeak in background. I use systemd init and I prefer to run all services as simple
+   systemd units, which runs in foreground. Sorry about that.
+ - **It uses python3. Is python 2.x supported?** - No, I don't plan to support python 2.x.
