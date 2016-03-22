@@ -72,16 +72,16 @@ class DataCollector:
 
 class UpdateBuffer:
     """!
-    Object for buffering reqired data set before delivering them to ThingSpeak.
+    Class for buffering required data set before sending them out.
     """
 
     ## @var channel
-    # Updated channel.
+    # Updated channel object.
 
     ## @var dataIdentifiers
     # Iterable of DataIdentifier objects.
 
-    ## @var dataDict
+    ## @var dataMapping
     # The {DataIdentifier: value} mapping.
 
     def __init__(self, channel, dataIdentifiers):
@@ -101,7 +101,7 @@ class UpdateBuffer:
 
         @return True if all required data are buffered, False otherwise.
         """
-        return not any(x is None for x in self.dataDict.values())
+        return not any(x is None for x in self.dataMapping.values())
 
     def updateReceivedData(self, dataIdentifier, value):
         """!
@@ -111,10 +111,10 @@ class UpdateBuffer:
         @param value Data content.
         @throws TopicException If unnessesary topic is updated.
         """
-        if dataIdentifier not in self.dataDict:
+        if dataIdentifier not in self.dataMapping:
             raise TopicException("Illegal topic update: {}".format(dataIdentifier))
         else:
-            self.dataDict[dataIdentifier] = value
+            self.dataMapping[dataIdentifier] = value
 
     def getData(self):
         """!
@@ -125,15 +125,15 @@ class UpdateBuffer:
         if not self.isComplete():
             raise TopicException("Some topic data is missing")
         else:
-            return self.dataDict
+            return self.dataMapping
 
     def reset(self):
         """!
         Clear buffered data.
         """
-        self.dataDict = dict()
+        self.dataMapping = {}
         for dataIdentifier in self.dataIdentifiers:
-            self.dataDict[dataIdentifier] = None
+            self.dataMapping[dataIdentifier] = None
 
     def __str__(self):
         """!
