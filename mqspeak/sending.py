@@ -146,6 +146,8 @@ class BaseSender:
         @param measurement
         """
         try:
+            if System.verbose:
+                print("Sending data to channel {}...".format(channel))
             status, reason, responseBytes = self.fetch(channel, measurement)
             response = self.decodeResponseData(responseBytes)
             if System.verbose:
@@ -154,7 +156,7 @@ class BaseSender:
             success = self.checkSendResult(result)
             return UpdateResult(success)
         except BaseException as ex:
-            print("Send exception: {}".format(ex), file = sys.stderr)
+            print("Send exception: {}".format(ex))
             return UpdateResult(False)
 
     def decodeResponseData(self, responseBytes):
@@ -168,7 +170,7 @@ class BaseSender:
         try:
             data = responseBytes.decode("utf-8").strip()
         except UnicodeError as ex:
-            print("Can't decode response data: {}".format(responseBytes), file=sys.stderr)
+            print("Can't decode response data: {}".format(responseBytes))
             data = "<Decode error>"
         return data
 
@@ -215,12 +217,17 @@ class ThingSpeakSender(BaseSender):
         """!
         @copydoc BaseSender::checkSendResult()
         """
-        (status, reason, data) = result
+        status, reason, data = result
         if status != 200:
-            print("Response status error: {} {} - {}.".format(status, reason, data), file = sys.stderr)
+            print("Response status error: {} {} - {}.".format(status, reason, data))
             return False
-        elif data == "0":
-            print("Data send error: ThingSpeak responded with return code 0.", file = sys.stderr)
+        try:
+            entries = int(data)
+            if entries == 0:
+                print("Data send error: ThingSpeak responded with return code 0.")
+                return False
+        except ValueError as ex:
+            print("Data send error: ThingSpeak responded with unexpected response: {}".format(repr(data)))
             return False
         return True
 
@@ -252,7 +259,7 @@ class PhantSender(BaseSender):
         """
         (status, reason, data) = result
         if status != 200:
-            print("Response status error: {} {} - {}.".format(status, reason, data), file = sys.stderr)
+            print("Response status error: {} {} - {}.".format(status, reason, data))
             return False
         return True
 

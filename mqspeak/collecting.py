@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
+
 from mqreceive.data import DataIdentifier
 from mqspeak.data import Measurement
 
@@ -61,14 +63,15 @@ class DataCollector:
         @param data Payload.
         """
         try:
-            updateBuffer.updateReceivedData(dataIdentifier, data)
-            if updateBuffer.isComplete():
-                d = updateBuffer.getData()
-                updateBuffer.reset()
-                measurement = Measurement.currentMeasurement(d)
-                self.channelUpdateSupervisor.dataAvailable(updateBuffer.channel, measurement)
+            if updateBuffer.isUpdateRelevant(dataIdentifier):
+                updateBuffer.updateReceivedData(dataIdentifier, data)
+                if updateBuffer.isComplete():
+                    d = updateBuffer.getData()
+                    updateBuffer.reset()
+                    measurement = Measurement.currentMeasurement(d)
+                    self.channelUpdateSupervisor.dataAvailable(updateBuffer.channel, measurement)
         except TopicException as ex:
-            pass
+            print("Topic exception: {}".format(ex), file = sys.stderr)
 
 class UpdateBuffer:
     """!
@@ -103,6 +106,15 @@ class UpdateBuffer:
         """
         return not any(x is None for x in self.dataMapping.values())
 
+    def isUpdateRelevant(self, dataIdentifier):
+        """!
+        Check if update is relevant to this channel.
+
+        @param dataIdentifier Update data identifier.
+        @return True if update is relevant, False otherwise
+        """
+        return dataIdentifier in self.dataMapping
+
     def updateReceivedData(self, dataIdentifier, value):
         """!
         Update received data.
@@ -111,7 +123,7 @@ class UpdateBuffer:
         @param value Data content.
         @throws TopicException If unnessesary topic is updated.
         """
-        if dataIdentifier not in self.dataMapping:
+        if not self.isUpdateRelevant(dataIdentifier):
             raise TopicException("Illegal topic update: {}".format(dataIdentifier))
         else:
             self.dataMapping[dataIdentifier] = value
