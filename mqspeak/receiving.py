@@ -16,7 +16,7 @@
 import os
 import paho.mqtt.client as mqtt
 import socket
-import sys
+import logging
 import threading
 from mqreceive.data import DataIdentifier
 from mqreceive.receiving import BaseBrokerReceiver
@@ -88,7 +88,7 @@ class BrokerReceiver(BaseBrokerReceiver):
         @param flags
         @param rc
         """
-        print("{}: [{}] {}.".format(self._createClientIdentificationString(), rc, self._getClientConnectionStatus(rc)))
+        logging.getLogger().info("{}: [{}] {}.".format(self._createClientIdentificationString(), rc, self._getClientConnectionStatus(rc)))
         for sub in self.subsciption:
             (result, mid) = self.client.subscribe(sub)
 
@@ -100,7 +100,7 @@ class BrokerReceiver(BaseBrokerReceiver):
         @param userdata
         @param rc
         """
-        print("Client dicsconnect: {}".format(rc))
+        logging.getLogger().info("Client dicsconnect: {}".format(rc))
 
     def onMessage(self, client, userdata, msg):
         """!
@@ -115,7 +115,7 @@ class BrokerReceiver(BaseBrokerReceiver):
             data = msg.payload.decode("utf-8")
             self.dataCollector.onNewData(dataID, data)
         except UnicodeError as ex:
-            print("Can't decode received message payload: {}".format(msg.payload), file=sys.stderr)
+            logging.getLogger().info("Can't decode received message payload: {}".format(msg.payload))
 
     def onSubscribe(self, client, userdata, mid, granted_qos):
         """!
@@ -146,7 +146,7 @@ class BrokerReceiver(BaseBrokerReceiver):
         @param buf
         """
         if System.verbose:
-            print("{}: [{}] {}".format(self._createClientIdentificationString(), level, buf))
+            logging.getLogger().info("{}: [{}] {}".format(self._createClientIdentificationString(), level, buf))
 
     def stop(self):
         """!

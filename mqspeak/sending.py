@@ -16,8 +16,8 @@
 import collections
 import datetime
 import http.client
-import sys
 import threading
+import logging
 import urllib.parse
 from mqspeak.system import System
 from mqspeak.channel import ChannelType
@@ -147,16 +147,16 @@ class BaseSender:
         """
         try:
             if System.verbose:
-                print("Sending data to channel {}...".format(channel))
+                logging.getLogger().info("Sending data to channel {}...".format(channel))
             status, reason, responseBytes = self.fetch(channel, measurement)
             response = self.decodeResponseData(responseBytes)
             if System.verbose:
-                print("Channel {} response: {} {}: {}".format(channel, status, reason, response))
+                logging.getLogger().info("Channel {} response: {} {}: {}".format(channel, status, reason, response))
             result = (status, reason, response)
             success = self.checkSendResult(result)
             return UpdateResult(success)
         except BaseException as ex:
-            print("Send exception: {}".format(ex))
+            logging.getLogger().info("Send exception: {}".format(ex))
             return UpdateResult(False)
 
     def decodeResponseData(self, responseBytes):
@@ -170,7 +170,7 @@ class BaseSender:
         try:
             data = responseBytes.decode("utf-8").strip()
         except UnicodeError as ex:
-            print("Can't decode response data: {}".format(responseBytes))
+            logging.getLogger().info("Can't decode response data: {}".format(responseBytes))
             data = "<Decode error>"
         return data
 
@@ -219,15 +219,15 @@ class ThingSpeakSender(BaseSender):
         """
         status, reason, data = result
         if status != 200:
-            print("Response status error: {} {} - {}.".format(status, reason, data))
+            logging.getLogger().info("Response status error: {} {} - {}.".format(status, reason, data))
             return False
         try:
             entries = int(data)
             if entries == 0:
-                print("Data send error: ThingSpeak responded with return code 0.")
+                logging.getLogger().info("Data send error: ThingSpeak responded with return code 0.")
                 return False
         except ValueError as ex:
-            print("Data send error: ThingSpeak responded with unexpected response: {}".format(repr(data)))
+            logging.getLogger().info("Data send error: ThingSpeak responded with unexpected response: {}".format(repr(data)))
             return False
         return True
 
@@ -259,7 +259,7 @@ class PhantSender(BaseSender):
         """
         (status, reason, data) = result
         if status != 200:
-            print("Response status error: {} {} - {}.".format(status, reason, data))
+            logging.getLogger().info("Response status error: {} {} - {}.".format(status, reason, data))
             return False
         return True
 

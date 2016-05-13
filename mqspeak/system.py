@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import logging
 from mqspeak.collecting import UpdateBuffer
 from mqspeak.config import ProgramConfig, ConfigException
 from mqspeak.data import MeasurementParamConverter
@@ -36,7 +36,7 @@ class System:
         try:
             cls.configCache = config.parse()
         except ConfigException as ex:
-            print("Configuration error: {}".format(ex), file=sys.stderr)
+            logging.getLogger().info("Configuration error: {}".format(ex))
             exit(1)
 
         cls.verbose = cls.cliArgs.verbose

@@ -17,7 +17,7 @@ import datetime
 import threading
 import time
 import queue
-import sys
+import logging
 from mqspeak.data import Measurement
 
 class ChannnelUpdateSupervisor:
@@ -406,7 +406,7 @@ class AverageUpdater(SynchronousUpdater):
         if self.isAllMeasurementValuesValid(measurement):
             self.intervalMeasurements.append(measurement)
         else:
-            print("Can't convert all measured values to numbers: {}".format(measurement), file=sys.stderr)
+            logging.getLogger().info("Can't convert all measured values to numbers: {}".format(measurement))
 
     def resetBuffer(self):
         """!

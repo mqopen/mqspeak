@@ -13,8 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-
+import logging
 from mqreceive.data import DataIdentifier
 from mqspeak.data import Measurement
 
@@ -71,7 +70,7 @@ class DataCollector:
                     measurement = Measurement.currentMeasurement(d)
                     self.channelUpdateSupervisor.dataAvailable(updateBuffer.channel, measurement)
         except TopicException as ex:
-            print("Topic exception: {}".format(ex), file = sys.stderr)
+            logging.getLogger().info("Topic exception: {}".format(ex))
 
 class UpdateBuffer:
     """!
