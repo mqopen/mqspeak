@@ -100,7 +100,7 @@ class BrokerReceiver(BaseBrokerReceiver):
         @param userdata
         @param rc
         """
-        logging.getLogger().info("Client dicsconnect: {}".format(rc))
+        logging.getLogger().info("Client disconnect: {}".format(rc))
 
     def onMessage(self, client, userdata, msg):
         """!

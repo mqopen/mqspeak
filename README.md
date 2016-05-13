@@ -138,10 +138,10 @@ out even incomplete channel update.
 Waiting scenario can be divided into following cases:
 
  - **`UpdateRate` condition is met but there are no data.** Wait mechanism is not activated
-    until some data arrives. After it received first part of channel update, it will wait
-    defined time to seconds to try collect remaining data. After `WaitInterval` expires,
+    until some data arrives. After it received first part of channel update, mqspeak will wait
+    defined time and tries collect remaining data. After `WaitInterval` expires,
     data will be send.
- - **Data arrives before `UpdateRate` condition is met.** Wating is triggered immediately.
+ - **Data arrives before `UpdateRate` condition is met.** Waiting is triggered immediately.
     After `WaitInterval` expires, data will be send.
  - **All required data are collected before `UpdateRate` condition is met.** There is no
     need to activate update waiting. Simply send data.
