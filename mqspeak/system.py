@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import logging.handlers
 from mqspeak.collecting import UpdateBuffer
 from mqspeak.config import ProgramConfig, ConfigException
 from mqspeak.data import MeasurementParamConverter
@@ -30,6 +31,13 @@ class System:
         """!
         Initiate system configuration.
         """
+
+        l = logging.getLogger()
+        l.setLevel(logging.INFO)
+        h = logging.handlers.SysLogHandler(address='/dev/log')
+        h.setLevel(logging.INFO)
+        l.addHandler(h)
+
         cls.cliArgs = args.parse_args()
         config = ProgramConfig(cls.cliArgs.config)
         # TODO: handle config exceptions

@@ -14,8 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-import logging.handlers
 from mqspeak.collecting import DataCollector
 from mqreceive.receiving import BrokerThreadManager
 from mqspeak.sending import ChannelUpdateDispatcher
@@ -24,12 +22,6 @@ from mqspeak.updating import ChannnelUpdateSupervisor
 
 def main():
     System.initialize()
-
-    l = logging.getLogger()
-    l.setLevel(logging.INFO)
-    h = logging.handlers.SysLogHandler(address='/dev/log')
-    h.setLevel(logging.INFO)
-    l.addHandler(h)
 
     # Channel update dispatcher object
     channelConvertMapping = System.getChannelConvertMapping()
