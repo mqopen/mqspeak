@@ -44,7 +44,7 @@ class System:
         try:
             cls.configCache = config.parse()
         except ConfigException as ex:
-            logging.getLogger().info("Configuration error: {}".format(ex))
+            logging.getLogger().error("Configuration error: {}".format(ex))
             exit(1)
 
         cls.verbose = cls.cliArgs.verbose
