@@ -204,7 +204,7 @@ class ThingSpeakSender(BaseSender):
         body = self.channelConvertMapping[channel].convert(measurement)
         body.update({'api_key': channel.apiKey})
         bodyEncoded = urllib.parse.urlencode(body)
-        conn = http.client.HTTPSConnection("api.thingspeak.com")
+        conn = http.client.HTTPSConnection("api.thingspeak.com", timeout = 30)
         conn.request("POST", "/update", bodyEncoded)
         response = conn.getresponse()
         status = response.status
@@ -244,7 +244,7 @@ class PhantSender(BaseSender):
         bodyEncoded = urllib.parse.urlencode(body)
         headers = {"Phant-Private-Key": channel.apiKey,
                     "Content-Type": "application/x-www-form-urlencoded"}
-        conn = http.client.HTTPConnection("data.sparkfun.com")
+        conn = http.client.HTTPConnection("data.sparkfun.com", timeout = 30)
         conn.request("POST", "/input/{}".format(channel.channelID), bodyEncoded, headers=headers)
         response = conn.getresponse()
         status = response.status
