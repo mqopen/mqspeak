@@ -132,7 +132,7 @@ When channel update consists of data from multiple sensors, it may happen that o
 sensor die. By default channel never will be updated until data from all sensors arrives.
 Inactive sensor causes channel update will be stalled.
 
-When update waiting enabled, mqspeak will wait defined about of seconds and then sends
+When update waiting enabled, mqspeak will wait defined amount of seconds and then sends
 out even incomplete channel update.
 
 Waiting scenario can be divided into following cases:
