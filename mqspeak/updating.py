@@ -18,9 +18,11 @@ import threading
 import time
 import queue
 import logging
+from mqspeak.collecting import LastValueUpdateBuffer
+from mqreceive.collecting import DataCollector
 from mqspeak.data import Measurement
 
-class ChannnelUpdateSupervisor:
+class ChannnelUpdateSupervisor(DataCollector):
     """!
     Manage channel updaters. Object is responsible to delivering channel update event to
     correct Updater object.
@@ -29,6 +31,9 @@ class ChannnelUpdateSupervisor:
     ## @var channelUpdaterMapping
     # Mapping for {channel: updater}.
 
+    ## @var waitingChannels
+    # Mapping of channels which has some data wainting.
+
     def __init__(self, channelUpdaterMapping):
         """!
         Initiate ChannnelUpdateSupervisor object.
@@ -36,6 +41,11 @@ class ChannnelUpdateSupervisor:
         @param channelUpdaterMapping Mapping for {channel: updater}.
         """
         self.channelUpdaterMapping = channelUpdaterMapping
+        self.waitingChannels = {}
+        self.waintingUpdater = SchedulerExecutor(
+            datetime.timedelta(seconds = 1),
+            self.updateWaitingData)
+        threading.Thread(target = self.waintingUpdater).start()
 
     def dataAvailable(self, channel, measurement):
         """!
@@ -46,6 +56,52 @@ class ChannnelUpdateSupervisor:
         """
         updater = self.channelUpdaterMapping[channel]
         updater.dataAvailable(measurement)
+
+        # TODO: race condition
+        if channel in self.waitingChannels:
+            del self.waitingChannels[channel]
+
+    def dataWaiting(self, updateBuffer):
+        """!
+        Notify update supervisor object that part of needed data arrived.
+
+        @param updateBuffer UpdateBuffer object which holds partial data.
+        """
+        channel = updateBuffer.channel
+        if channel.hasWaiting():
+            self.waitingChannels[channel] = updateBuffer, datetime.now()
+
+    #def updateWaitingData(self):
+    #    """!
+    #    Do partitial update. Clear waiting data.
+    #    """
+    #    now = datetime.now()
+    #    expiredChannels = set()
+    #    for channel in self.waitingChannels:
+    #        if channel.hasWaiting():
+    #            updateBuffer, lastUpdate = self.waitingChannels[channel]
+    #            delta = now - lastUpdate
+    #            if delta > channel.waiting:
+    #                self.sendIncomleteUpdate(updateBuffer)
+    #                expiredChannels.add(channel)
+    #
+    #    # Clear updated channels from waitingChannels mapping.
+    #    for channel in expiredChannels:
+    #        del self.waitingChannels[channel]
+
+    def updateWaitingData(self, executor):
+        """!
+        Do partitial update. Clear waiting data.
+        """
+        for updater in self.channelUpdaterMapping.values():
+            updater.notifyUpdateWaiting()
+        threading.Thread(target = self.waintingUpdater).start()
+
+    def sendIncomleteUpdate(self, updateBuffer):
+        """!
+        """
+        logging.getLogger().warning("Sending incomplete update...")
+        channel = updateBuffer.channel
 
     def setDispatcher(self, dispatcher):
         """!
@@ -60,8 +116,14 @@ class ChannnelUpdateSupervisor:
         """!
         Stop execution of all updaters.
         """
+        self.waintingUpdater.stop()
         for updater in self.channelUpdaterMapping.values():
             updater.stop()
+
+    def onNewData(self, dataIdentifier, data):
+        for updater in self.channelUpdaterMapping.values():
+            if updater.isUpdateRelevant(dataIdentifier):
+                updater.updateReceivedData(dataIdentifier, data)
 
 class BaseUpdater:
     """!
@@ -86,18 +148,23 @@ class BaseUpdater:
     ## @var dispatcher
     # Update dispatcher object.
 
-    def __init__(self, channel, updateInterval):
+    ## @var updateBuffer
+    # Channel UpdateBuffer object.
+
+    def __init__(self, channel, updateInterval, updateBuffer):
         """!
         Initiate BaseUpdater object.
 
         @param channel Update Channel object.
         @param updateInterval timedelta object defining update interval.
+        @param updateBuffer UpdateBuffer object.
         """
         self.channel = channel
         self.updateInterval = updateInterval
         self.isUpdateRunning = False
         self.lastUpdated = datetime.datetime.min
         self.updateLock = threading.Semaphore(1)
+        self.updateBuffer = updateBuffer
 
     def setDispatcher(self, dispatcher):
         """!
@@ -191,11 +258,42 @@ class BaseUpdater:
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
+    def isUpdateRelevant(self, dataIdentifier):
+        """!
+        Check if update is relevant to this channel.
+
+        @param dataIdentifier Update data identifier.
+        @return True if update is relevant, False otherwise
+        """
+        return self.updateBuffer.isUpdateRelevant(dataIdentifier)
+
+    def updateReceivedData(self, dataIdentifier, value):
+        """!
+        Update received data.
+
+        @param dataIdentifier Data identification.
+        @param value Data content.
+        @throws TopicException If unwanted topic is updated.
+        """
+        self.updateBuffer.updateReceivedData(dataIdentifier, value)
+
+    def notifyUpdateWaiting(self):
+        """!
+        """
+        print(self.updateBuffer)
+
 class BlackoutUpdater(BaseUpdater):
     """!
     Ignore any incomming data during blackkout period. Send first data after this
     period expires.
     """
+
+    def __init__(self, channel, updateMapping, updateInterval):
+        BaseUpdate.__init__(
+            self,
+            channel,
+            updateInterval,
+            LastValueUpdateBuffer(updateBuffer.keys()))
 
     def handleAvailableData(self, measurement):
         """!
@@ -227,14 +325,14 @@ class SynchronousUpdater(BaseUpdater):
     ## @var executors
     # Set of running executors.
 
-    def __init__(self, channel, updateInterval):
+    def __init__(self, channel, updateInterval, updateBuffer):
         """!
         Initiate SynchronousUpdater object.
 
         @param channel
         @param updateInterval
         """
-        BaseUpdater.__init__(self, channel, updateInterval)
+        BaseUpdater.__init__(self, channel, updateInterval, updateBuffer)
         self.resetBuffer()
         self.isUpdateScheduled = False
         self.bufferLock = threading.Semaphore(1)
@@ -366,6 +464,13 @@ class BufferedUpdater(SynchronousUpdater):
     ## @var measurement
     # Stored measurement.
 
+    def __init__(self, channel, updateMapping, updateInterval):
+        SynchronousUpdater.__init__(
+            self,
+            channel,
+            updateInterval,
+            LastValueUpdateBuffer(updateMapping.keys()))
+
     def resetBuffer(self):
         """!
         @copydoc SynchronousUpdater::resetBuffer()
@@ -398,6 +503,13 @@ class AverageUpdater(SynchronousUpdater):
 
     ## @var intervalMeasurements
     # Stored measurements to compute average values.
+
+    def __init__(self, channel, updateMapping, updateInterval):
+        SynchronousUpdater.__init__(
+            self,
+            channel,
+            updateInterval,
+            LastValueUpdateBuffer(updateMapping.keys()))
 
     def storeUpdateData(self, measurement):
         """!
@@ -523,3 +635,8 @@ class SchedulerExecutor:
         Stop scheduler execution.
         """
         self.event.set()
+
+class TopicException(Exception):
+    """!
+    Update buffer related errors.
+    """

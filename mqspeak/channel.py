@@ -40,7 +40,10 @@ class Channel:
     ## @var apiKey
     # Channel API write key.
 
-    def __init__(self, channelType, name, channelID, apiKey):
+    ## @var waiting
+    # Channel waiting timedelta object or None if waiting is disabled.
+
+    def __init__(self, channelType, name, channelID, apiKey, waiting = None):
         """!
         Initiate channel object.
 
@@ -53,6 +56,7 @@ class Channel:
         self.name = name
         self.channelID = channelID
         self.apiKey = apiKey
+        self.waiting = waiting
 
     def __hash__(self):
         """!
@@ -77,6 +81,14 @@ class Channel:
         @return Representation string.
         """
         return "<{}>".format(self.__str__())
+
+    def hasWaiting(self):
+        """!
+        Check if channel has wainting enabled.
+
+        @return True if waiting is enabled, False otherwise.
+        """
+        return self.waiting is not None
 
 class ThingSpeakChannel(Channel):
     """!

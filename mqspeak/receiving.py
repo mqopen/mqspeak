@@ -22,7 +22,7 @@ from mqreceive.data import DataIdentifier
 from mqreceive.receiving import BaseBrokerReceiver
 from mqspeak.system import System
 
-class BrokerReceiver(BaseBrokerReceiver):
+class _BrokerReceiver(BaseBrokerReceiver):
     """!
     Broker receiving thread
     """

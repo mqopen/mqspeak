@@ -29,10 +29,10 @@ def main():
 
     channelUpdateSupervisor = ChannnelUpdateSupervisor(System.getChannelUpdateMapping())
     channelUpdateSupervisor.setDispatcher(updateDispatcher)
-    dataCollector = DataCollector(System.getUpdateBuffers(), channelUpdateSupervisor)
+    #dataCollector = DataCollector(System.getUpdateBuffers(), channelUpdateSupervisor)
 
     # MQTT cliens
-    brokerManager = BrokerThreadManager(System.getBrokerListenDescriptors(), dataCollector)
+    brokerManager = BrokerThreadManager(System.getBrokerListenDescriptors(), channelUpdateSupervisor)
 
     # run all MQTT client threads
     brokerManager.start()

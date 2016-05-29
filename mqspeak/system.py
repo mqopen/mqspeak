@@ -15,7 +15,7 @@
 
 import logging
 import logging.handlers
-from mqspeak.collecting import UpdateBuffer
+#from mqspeak.collecting import UpdateBuffer
 from mqspeak.config import ProgramConfig, ConfigException
 from mqspeak.data import MeasurementParamConverter
 from mqspeak import args

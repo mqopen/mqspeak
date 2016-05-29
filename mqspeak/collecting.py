@@ -69,10 +69,13 @@ class DataCollector:
                     updateBuffer.reset()
                     measurement = Measurement.currentMeasurement(d)
                     self.channelUpdateSupervisor.dataAvailable(updateBuffer.channel, measurement)
+                else:
+                    # Notify update supervisor about arrived data.
+                    self.channelUpdateSupervisor.dataAvailable(updateBuffer)
         except TopicException as ex:
             logging.getLogger().info("Topic exception: {}".format(ex))
 
-class UpdateBuffer:
+class _UpdateBuffer:
     """!
     Class for buffering required data set before sending them out.
     """
@@ -120,7 +123,7 @@ class UpdateBuffer:
 
         @param dataIdentifier Data identification.
         @param value Data content.
-        @throws TopicException If unnessesary topic is updated.
+        @throws TopicException If unwanted topic is updated.
         """
         if not self.isUpdateRelevant(dataIdentifier):
             raise TopicException("Illegal topic update: {}".format(dataIdentifier))
@@ -133,10 +136,7 @@ class UpdateBuffer:
 
         @return Buffered data.
         """
-        if not self.isComplete():
-            raise TopicException("Some topic data is missing")
-        else:
-            return self.dataMapping
+        return self.dataMapping
 
     def reset(self):
         """!
@@ -161,6 +161,92 @@ class UpdateBuffer:
         @return Representation string.
         """
         return "<{}>".format(self.__str__())
+
+class BaseUpdateBuffer:
+    """!
+    Class for buffering required data set before sending them out.
+    """
+
+    ## @var dataIdentifiers
+    # Iterable of DataIdentifier objects.
+
+    ## @var dataMapping
+    # The {DataIdentifier: value} mapping.
+
+    def __init__(self, dataIdentifiers):
+        """!
+        Initiate UpdateBuffer object.
+
+        @param dataIdentifiers Iterable of DataIdentifier objects.
+        """
+        self.dataIdentifiers = dataIdentifiers
+        self.reset()
+
+    def isComplete(self):
+        """!
+        Check if all required data are buffered.
+
+        @return True if all required data are buffered, False otherwise.
+        """
+        return not any(x is None for x in self.dataMapping.values())
+
+    def isUpdateRelevant(self, dataIdentifier):
+        """!
+        Check if update is relevant to this channel.
+
+        @param dataIdentifier Update data identifier.
+        @return True if update is relevant, False otherwise
+        """
+        return dataIdentifier in self.dataMapping
+
+    def updateReceivedData(self, dataIdentifier, value):
+        """!
+        Update received data. Override in subclass.
+
+        @param dataIdentifier Data identification.
+        @param value Data content.
+        @throws TopicException If unwanted topic is updated.
+        """
+        raise NotImplementedError("Override this mehod in sub-class")
+
+    def getData(self):
+        """!
+        Get dictionary with buffered data.
+
+        @return Buffered data.
+        """
+        return self.dataMapping
+
+    def reset(self):
+        """!
+        Clear buffered data.
+        """
+        self.dataMapping = {}
+        for dataIdentifier in self.dataIdentifiers:
+            self.dataMapping[dataIdentifier] = None
+
+    def __str__(self):
+        """!
+        Convert UpdateBuffer object to string.
+
+        @return String.
+        """
+        return "{}({})".format(self.__class__.__name__, self.dataMapping)
+
+    def __repr__(self):
+        """!
+        Convert UpdateBuffer object to representation string.
+
+        @return Representation string.
+        """
+        return "<{}>".format(self.__str__())
+
+class LastValueUpdateBuffer(BaseUpdateBuffer):
+    def updateReceivedData(self, dataIdentifier, value):
+        if not self.isUpdateRelevant(dataIdentifier):
+            raise TopicException("Illegal topic update: {}".format(dataIdentifier))
+        else:
+            self.dataMapping[dataIdentifier] = value
 
 class TopicException(Exception):
     """!

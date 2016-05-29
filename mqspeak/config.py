@@ -52,8 +52,8 @@ class ProgramConfig:
         for broker, subscriptions in self.getBrokers():
             configCache.addBroker(broker, subscriptions)
         for channel, updaterFactory, updateMappingFactory in self.getChannels():
-            updater = updaterFactory.build(channel)
             updateMapping = updateMappingFactory.build(configCache)
+            updater = updaterFactory.build(channel, updateMapping)
             configCache.addChannel(channel, updater, updateMapping)
         return configCache
 
@@ -386,14 +386,14 @@ class ChannelUpdaterFactory:
         self.updaterCls = updaterCls
         self.updaterArgs = updaterArgs
 
-    def build(self, channel):
+    def build(self, channel, updateMapping):
         """!
         Build ChannelUpdater object.
 
         @param channel
         @return ChannelUpdater object.
         """
-        return self.updaterCls(channel, *self.updaterArgs)
+        return self.updaterCls(channel, updateMapping, *self.updaterArgs)
 
 class UpdateMappingFactory:
     """!
