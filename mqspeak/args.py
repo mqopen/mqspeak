@@ -32,7 +32,10 @@ def create_parser():
                         help='path to configuration file',
                         default="/etc/mqspeak.conf")
     parser.add_argument('-v', '--verbose',
-                        help='verbose',
+                        help='Verbose output.',
+                        action='store_true')
+    parser.add_argument('-o',
+                        help='Log to stdout instead of syslog',
                         action='store_true')
     parser.add_argument('--version',
                         action='version',

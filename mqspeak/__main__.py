@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from mqspeak.collecting import DataCollector
 from mqreceive.receiving import BrokerThreadManager
 from mqspeak.sending import ChannelUpdateDispatcher
 from mqspeak.system import System
@@ -29,7 +28,6 @@ def main():
 
     channelUpdateSupervisor = ChannnelUpdateSupervisor(System.getChannelUpdateMapping())
     channelUpdateSupervisor.setDispatcher(updateDispatcher)
-    #dataCollector = DataCollector(System.getUpdateBuffers(), channelUpdateSupervisor)
 
     # MQTT cliens
     brokerManager = BrokerThreadManager(System.getBrokerListenDescriptors(), channelUpdateSupervisor)

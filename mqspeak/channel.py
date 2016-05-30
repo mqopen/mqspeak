@@ -43,7 +43,7 @@ class Channel:
     ## @var waiting
     # Channel waiting timedelta object or None if waiting is disabled.
 
-    def __init__(self, channelType, name, channelID, apiKey, waiting = None):
+    def __init__(self, channelType, name, channelID, apiKey, waiting):
         """!
         Initiate channel object.
 
@@ -51,6 +51,7 @@ class Channel:
         @param name Channel name.
         @param channelID Channel identification.
         @param apiKey Channel write API key.
+        @param waiting Channel waiting timedelta object of None
         """
         self.channelType = channelType
         self.name = name
@@ -95,7 +96,7 @@ class ThingSpeakChannel(Channel):
     ThingSpeak channel identification object.
     """
 
-    def __init__(self, name, channelID, apiKey):
+    def __init__(self, name, channelID, apiKey, waiting):
         """!
         Initiate ThingSpeak channel object.
 
@@ -103,14 +104,14 @@ class ThingSpeakChannel(Channel):
         @param channelID Channel identification.
         @param apiKey Channel write key.
         """
-        Channel.__init__(self, ChannelType.thingspeak, name, channelID, apiKey)
+        Channel.__init__(self, ChannelType.thingspeak, name, channelID, apiKey, waiting)
 
 class PhantChannel(Channel):
     """
     Phant channel identification object.
     """
 
-    def __init__(self, name, channelID, apiKey):
+    def __init__(self, name, channelID, apiKey, waiting):
         """!
         Initiate Phant channel object.
 
@@ -119,7 +120,7 @@ class PhantChannel(Channel):
         @param apiKey Channel write key.
         """
         self.checkChannelIdentification(channelID)
-        Channel.__init__(self, ChannelType.phant, name, channelID, apiKey)
+        Channel.__init__(self, ChannelType.phant, name, channelID, apiKey, waiting)
 
     def checkChannelIdentification(self, channelID):
         """!

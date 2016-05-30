@@ -182,10 +182,18 @@ class ProgramConfig:
         channelID = self.parser.get(channelSection, "Id", fallback = None)
         writeKey = self.parser.get(channelSection, "Key")
         channelType = self.parser.get(channelSection, "Type")
+        waitInterval = None
+        try:
+            waitInterval = self.parser.getint(channelSection, "WaitInterval", fallback = None)
+        except ValueError as ex:
+            raise ConfigException("Channel {} - WaitInterval: {}".format(channelSection, self.parser.get(channelSection, "WaitInterval")))
+        if waitInterval is not None:
+            waitInterval = datetime.timedelta(seconds = waitInterval)
+
         if channelType == "thingspeak":
-            return ThingSpeakChannel(channelSection, channelID, writeKey)
+            return ThingSpeakChannel(channelSection, channelID, writeKey, waitInterval)
         elif channelType == "phant":
-            return PhantChannel(channelSection, channelID, writeKey)
+            return PhantChannel(channelSection, channelID, writeKey, waitInterval)
         else:
             raise ConfigException("Unsupported channel type: {}".format(channelType))
 

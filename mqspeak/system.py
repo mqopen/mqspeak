@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import logging
 import logging.handlers
 #from mqspeak.collecting import UpdateBuffer
@@ -35,10 +36,20 @@ class System:
         l = logging.getLogger()
         l.setLevel(logging.INFO)
         h = logging.handlers.SysLogHandler(address='/dev/log')
-        h.setLevel(logging.INFO)
-        l.addHandler(h)
 
         cls.cliArgs = args.parse_args()
+
+        # Logging destination.
+        if cls.cliArgs.o:
+            h = logging.StreamHandler(stream = sys.stdout)
+
+        # Verbose.
+        if cls.cliArgs.verbose:
+            h.setLevel(logging.INFO)
+        else:
+            h.setLevel(logging.ERROR)
+        l.addHandler(h)
+
         config = ProgramConfig(cls.cliArgs.config)
         # TODO: handle config exceptions
         try:

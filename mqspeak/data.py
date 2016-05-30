@@ -32,10 +32,7 @@ class Measurement:
 
         @param fields Maping {dataIdentifier: vaue}.
         @param time  Measurement timestamp.
-        @throws AttributeError If length of fields is greater than 8.
         """
-        if len(fields) > 8:
-            raise AttributeError("Fields must be up to length 8, {} given".format(len(fields)))
         self.fields = fields
         self.time = time
 
@@ -44,7 +41,6 @@ class Measurement:
         """!
         Build measurement object with current time.
 
-        @param cls
         @param fields Maping {dataIdentifier: vaue}.
         """
         return cls(fields, datetime.datetime.now())
