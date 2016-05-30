@@ -15,3 +15,11 @@
 
  - Mutexes are always released in finally block. Avoiding possible deadlocks.
  - Changed setup.py long description to content of README.md file.
+
+## v0.2.0
+
+ - Added channel waiting mechanism.
+ - Logging to syslog.
+ - Added `-o` option which instruct mqspek to log to stdout instead to syslog.
+ - Average updater now calculates a average value from all MQTT topic updates.
+    Not only from complete measurement.
