@@ -391,13 +391,13 @@ class AverageUpdater(SynchronousUpdater):
             updateInterval,
             AverageUpdateBuffer(updateMapping.keys()))
 
-class OnChangeUpdater(BaseUpdater):
+class OnChangeUpdater(SynchronousUpdater):
     """!
     Send every value change.
     """
 
     def __init__(self, channel, updateMapping, updateInterval):
-        BaseUpdater.__init__(
+        SynchronousUpdater.__init__(
             self,
             channel,
             updateInterval,
@@ -442,8 +442,3 @@ class SchedulerExecutor:
         Stop scheduler execution.
         """
         self.event.set()
-
-class TopicException(Exception):
-    """!
-    Update buffer related errors.
-    """

@@ -325,28 +325,32 @@ class ChangeValueBuffer(BaseUpdateBuffer):
     def handleUpdateReceivedData(self, dataIdentifier, value):
         if self.dataMapping[dataIdentifier] is None:
             self.dataMapping[dataIdentifier] = collections.deque()
-        if len(self.dataMapping[dataIdentifier]) > 1 and self.dataMapping[dataIdentifier][-1] != value:
+        if not (len(self.dataMapping[dataIdentifier]) > 0 and self.dataMapping[dataIdentifier][-1] == value):
             self.dataMapping[dataIdentifier].append(value)
 
     def getData(self):
         mapping = {}
         for dataIdentifier, valueList in self.dataMapping.items():
-            if valueList is not None and len(valueList) > 1:
+            if valueList is not None and len(valueList) > 0:
                 mapping[dataIdentifier] = valueList[0]
             else:
                 mapping[dataIdentifier] = None
+        print(mapping)
         return mapping
 
     def reset(self):
         """!
         Reset will not delete all data.
         """
+        if not hasattr(self, "dataMapping"):
+            BaseUpdateBuffer.reset(self)
+            return
         hasData = False
         for valueList in self.dataMapping.values():
-            if valueList is not None and len(valueList) > 1:
+            if valueList is not None and len(valueList) > 0:
                 valueList.popleft()
-            if not hasData and len(valueList) > 1:
-                hasData = True
+                if not hasData and len(valueList) > 0:
+                    hasData = True
         self.hasData = hasData
 
 class TopicException(Exception):
