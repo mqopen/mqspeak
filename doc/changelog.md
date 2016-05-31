@@ -23,3 +23,4 @@
  - Added `-o` option which instruct mqspek to log to stdout instead to syslog.
  - Average updater now calculates a average value from all MQTT topic updates.
     Not only from complete measurement.
+ - Implemented `onchange` updater.
