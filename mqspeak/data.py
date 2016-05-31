@@ -95,8 +95,9 @@ class MeasurementParamConverter:
         """
         params = dict()
         for topicName in measurement.fields:
-            fieldName = self.dataFieldsMapping[topicName]
-            params[fieldName] = measurement.fields[topicName]
+            if measurement.fields[topicName] is not None:
+                fieldName = self.dataFieldsMapping[topicName]
+                params[fieldName] = measurement.fields[topicName]
         return params
 
     def __str__(self):
