@@ -19,7 +19,6 @@ import http.client
 import threading
 import logging
 import urllib.parse
-from mqspeak.system import System
 from mqspeak.channel import ChannelType
 
 class ChannelUpdateDispatcher:
@@ -146,12 +145,10 @@ class BaseSender:
         @param measurement
         """
         try:
-            if System.verbose:
-                logging.getLogger().info("Sending data to channel {}...".format(channel))
+            logging.getLogger().info("Sending data to channel {}...".format(channel))
             status, reason, responseBytes = self.fetch(channel, measurement)
             response = self.decodeResponseData(responseBytes)
-            if System.verbose:
-                logging.getLogger().info("Channel {} response: {} {}: {}".format(channel, status, reason, response))
+            logging.getLogger().info("Channel {} response: {} {}: {}".format(channel, status, reason, response))
             result = (status, reason, response)
             success = self.checkSendResult(result)
             return UpdateResult(success)

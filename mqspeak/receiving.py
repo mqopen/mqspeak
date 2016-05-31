@@ -20,7 +20,6 @@ import logging
 import threading
 from mqreceive.data import DataIdentifier
 from mqreceive.receiving import BaseBrokerReceiver
-from mqspeak.system import System
 
 class _BrokerReceiver(BaseBrokerReceiver):
     """!
@@ -145,8 +144,7 @@ class _BrokerReceiver(BaseBrokerReceiver):
         @param level
         @param buf
         """
-        if System.verbose:
-            logging.getLogger().info("{}: [{}] {}".format(self._createClientIdentificationString(), level, buf))
+        logging.getLogger().info("{}: [{}] {}".format(self._createClientIdentificationString(), level, buf))
 
     def stop(self):
         """!

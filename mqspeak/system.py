@@ -58,8 +58,6 @@ class System:
             logging.getLogger().error("Configuration error: {}".format(ex))
             exit(1)
 
-        cls.verbose = cls.cliArgs.verbose
-
     @classmethod
     def getChannelConvertMapping(cls):
         """!
