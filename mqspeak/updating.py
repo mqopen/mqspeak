@@ -194,7 +194,6 @@ class BaseUpdater:
                 if not self.isUpdateRunning:
                     if self.waitingStarted is not None :
                         delta = datetime.datetime.now() - self.waitingStarted
-                        print("Channel {} hasn't been updated for {} seconds.".format(self.channel, delta.total_seconds()))
                         if self.updateBuffer.hasAnyData() and delta > self.channel.waiting:
                             logging.getLogger().warning(
                                 "Waiting timeouted, data items {} hasn't any data.".format(

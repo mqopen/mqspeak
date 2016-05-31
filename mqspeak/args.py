@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import argparse
 import mqspeak
 
@@ -23,10 +24,10 @@ class HelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 def create_parser():
     parser = argparse.ArgumentParser(
         description="MQTT bridge v{}".format(mqspeak.__version__),
-        epilog="Copyright (C) {} <{}> {}".format(
+        epilog="Copyright (C) {} <{}> {} ".format(
             mqspeak.__author__,
             mqspeak.__email__,
-            mqspeak.__url__),
+            mqspeak.__project_url__),
         formatter_class=HelpFormatter)
     parser.add_argument('-c', '--config',
                         help='path to configuration file',
