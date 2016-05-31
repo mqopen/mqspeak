@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import collections
 from mqreceive.data import DataIdentifier
 from mqspeak.data import Measurement
 
@@ -282,6 +283,9 @@ class BaseUpdateBuffer:
 
 class LastValueUpdateBuffer(BaseUpdateBuffer):
     """!
+    Keeps only last value. When some value is updated, the preveous value is lost.
+
+    Updater can hold any kind of data.
     """
 
     def handleUpdateReceivedData(self, dataIdentifier, value):
@@ -292,6 +296,8 @@ class LastValueUpdateBuffer(BaseUpdateBuffer):
 
 class AverageUpdateBuffer(BaseUpdateBuffer):
     """!
+    Calculate arithmetic average value. Each new value is stored in internal buffer.
+    getData() method returns data mapping with calculated average value.
     """
 
     def handleUpdateReceivedData(self, dataIdentifier, value):
@@ -308,7 +314,40 @@ class AverageUpdateBuffer(BaseUpdateBuffer):
         for dataIdentifier, valueList in self.dataMapping.items():
             if valueList is not None:
                 mapping[dataIdentifier] = float(sum(valueList)) / len(valueList)
+            else:
+                mapping[dataIdentifier] = None
         return mapping
+
+class ChangeValueBuffer(BaseUpdateBuffer):
+    """!
+    Store all change updates.
+    """
+    def handleUpdateReceivedData(self, dataIdentifier, value):
+        if self.dataMapping[dataIdentifier] is None:
+            self.dataMapping[dataIdentifier] = collections.deque()
+        if len(self.dataMapping[dataIdentifier]) > 1 and self.dataMapping[dataIdentifier][-1] != value:
+            self.dataMapping[dataIdentifier].append(value)
+
+    def getData(self):
+        mapping = {}
+        for dataIdentifier, valueList in self.dataMapping.items():
+            if valueList is not None and len(valueList) > 1:
+                mapping[dataIdentifier] = valueList[0]
+            else:
+                mapping[dataIdentifier] = None
+        return mapping
+
+    def reset(self):
+        """!
+        Reset will not delete all data.
+        """
+        hasData = False
+        for valueList in self.dataMapping.values():
+            if valueList is not None and len(valueList) > 1:
+                valueList.popleft()
+            if not hasData and len(valueList) > 1:
+                hasData = True
+        self.hasData = hasData
 
 class TopicException(Exception):
     """!

@@ -18,7 +18,7 @@ import threading
 import time
 import queue
 import logging
-from mqspeak.collecting import LastValueUpdateBuffer, AverageUpdateBuffer
+from mqspeak.collecting import LastValueUpdateBuffer, AverageUpdateBuffer, ChangeValueBuffer
 from mqreceive.collecting import DataCollector
 from mqspeak.data import Measurement
 
@@ -47,48 +47,6 @@ class ChannnelUpdateSupervisor(DataCollector):
             self.updateWaitingData)
         threading.Thread(target = self.waintingUpdater).start()
 
-    #def dataAvailable(self, channel, measurement):
-    #    """!
-    #    Deliver new update to correct Updater object.
-    #
-    #    @param channel
-    #    @param measurement
-    #    """
-    #    updater = self.channelUpdaterMapping[channel]
-    #    updater.dataAvailable(measurement)
-    #
-    #    # TODO: race condition
-    #    if channel in self.waitingChannels:
-    #        del self.waitingChannels[channel]
-
-    #def dataWaiting(self, updateBuffer):
-    #    """!
-    #    Notify update supervisor object that part of needed data arrived.
-    #
-    #    @param updateBuffer UpdateBuffer object which holds partial data.
-    #    """
-    #    channel = updateBuffer.channel
-    #    if channel.hasWaiting():
-    #        self.waitingChannels[channel] = updateBuffer, datetime.now()
-
-    #def updateWaitingData(self):
-    #    """!
-    #    Do partitial update. Clear waiting data.
-    #    """
-    #    now = datetime.now()
-    #    expiredChannels = set()
-    #    for channel in self.waitingChannels:
-    #        if channel.hasWaiting():
-    #            updateBuffer, lastUpdate = self.waitingChannels[channel]
-    #            delta = now - lastUpdate
-    #            if delta > channel.waiting:
-    #                self.sendIncomleteUpdate(updateBuffer)
-    #                expiredChannels.add(channel)
-    #
-    #    # Clear updated channels from waitingChannels mapping.
-    #    for channel in expiredChannels:
-    #        del self.waitingChannels[channel]
-
     def updateWaitingData(self, executor):
         """!
         Do partitial update. Clear waiting data.
@@ -96,12 +54,6 @@ class ChannnelUpdateSupervisor(DataCollector):
         for updater in self.channelUpdaterMapping.values():
             updater.notifyUpdateWaiting()
         threading.Thread(target = self.waintingUpdater).start()
-
-    #def sendIncomleteUpdate(self, updateBuffer):
-    #    """!
-    #    """
-    #    logging.getLogger().warning("Sending incomplete update...")
-    #    channel = updateBuffer.channel
 
     def setDispatcher(self, dispatcher):
         """!
@@ -147,8 +99,8 @@ class BaseUpdater:
     ## @var lastUpdated
     # Last update time.
 
-    ## @var dataOccured
-    # Timestamp of first data occurence.
+    ## @var waitingStarted
+    # Timestamp of started waiting.
 
     ## @var updateLock
     # Mutual exclusion to running updates.
@@ -171,7 +123,7 @@ class BaseUpdater:
         self.updateInterval = updateInterval
         self.isUpdateRunning = False
         self.lastUpdated = datetime.datetime.min
-        self.dataOccured = None
+        self.waitingStarted = None
         self.updateLock = threading.Semaphore(1)
         self.updateBuffer = updateBuffer
 
@@ -222,29 +174,36 @@ class BaseUpdater:
         # TODO: execute this code in separate thread. If one channel blocks, all
         # other channels will be also blocked.
         self.updateLock.acquire()
-        if not self.updateBuffer.hasAnyData():
-            self.dataOccured = datetime.datetime.now()
-        self.updateBuffer.updateReceivedData(dataIdentifier, value)
         try:
-            if self.updateBuffer.isComplete():
-                #self.handleAvailableData(self.updateBuffer.getMeasurement())
-                #self.updateBuffer.reset()
-                self.dataComplete()
+            self.updateBuffer.updateReceivedData(dataIdentifier, value)
+            if not self.isUpdateRunning:
+                if self.updateBuffer.isComplete():
+                    self.dataComplete()
+                else:
+                    if self.isUpdateIntervalExpired() and self.waitingStarted is None:
+                        self.waitingStarted = datetime.datetime.now()
         finally:
             self.updateLock.release()
 
     def notifyUpdateWaiting(self):
         """!
         """
-        if self.channel.hasWaiting() and self.dataOccured is not None:
+        if self.channel.hasWaiting():
             self.updateLock.acquire()
             try:
-                delta = datetime.datetime.now() - self.dataOccured
-                print("Channel {} hasn't been updated for {} seconds.".format(self.channel, delta.total_seconds()))
-                if self.updateBuffer.hasAnyData() and delta > self.channel.waiting:
-                    print("Waiting timeouted, data items {} hasn't any data.".format(", ".join(str(x) for x in self.updateBuffer.getMissingDataIdentifiers())))
-                    self.runUpdateLocked(self.updateBuffer.getMeasurement())
-                    self.updateBuffer.reset()
+                if not self.isUpdateRunning:
+                    if self.waitingStarted is not None :
+                        delta = datetime.datetime.now() - self.waitingStarted
+                        print("Channel {} hasn't been updated for {} seconds.".format(self.channel, delta.total_seconds()))
+                        if self.updateBuffer.hasAnyData() and delta > self.channel.waiting:
+                            logging.getLogger().warning(
+                                "Waiting timeouted, data items {} hasn't any data.".format(
+                                    ", ".join(str(x) for x in self.updateBuffer.getMissingDataIdentifiers())))
+                            self.runUpdate()
+                            self.updateBuffer.reset()
+                    elif self.isUpdateIntervalExpired() :
+                        # Update interval just expires.
+                        self.waitingStarted = datetime.datetime.now()
             finally:
                 self.updateLock.release()
 
@@ -254,13 +213,6 @@ class BaseUpdater:
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
-    #def handleAvailableData(self, measurement):
-    #    """!
-    #    Handle new data in updater. Override this mehod in sub-class.
-    #    """
-    #    raise NotImplementedError("Override this mehod in sub-class")
-
-    #def runUpdate(self, measurement):
     def runUpdate(self):
         """!
         Call this method in sub-class from handleAvailableData method.
@@ -268,13 +220,11 @@ class BaseUpdater:
         @param measurement
         """
         self.isUpdateRunning = True
-        self.dataOccured = None
-        #self.dispatcher.updateAvailable(self.channel, measurement, self)
+        self.waitingStarted = None
         measurement = self.updateBuffer.getMeasurement()
         self.updateBuffer.reset()
         self.dispatcher.updateAvailable(self.channel, measurement, self)
 
-    #def runUpdateLocked(self, measurement):
     def runUpdateLocked(self):
         """!
         Run update. This method avoids race conditions. Do not call this method
@@ -284,7 +234,6 @@ class BaseUpdater:
         """
         self.updateLock.acquire()
         try:
-            #self.runUpdate(measurement)
             self.runUpdate()
         finally:
             self.updateLock.release()
@@ -325,13 +274,6 @@ class BlackoutUpdater(BaseUpdater):
             updateInterval,
             LastValueUpdateBuffer(updateBuffer.keys()))
 
-    #def handleAvailableData(self, measurement):
-    #    """!
-    #    @copydoc BaseUpdater::handleAvailableData()
-    #    """
-    #    if self.isUpdateIntervalExpired() and not self.isUpdateRunning:
-    #        self.runUpdate(measurement)
-
     def dataComplete(self):
         if self.isUpdateIntervalExpired() and not self.isUpdateRunning:
             self.runUpdate()
@@ -350,9 +292,6 @@ class SynchronousUpdater(BaseUpdater):
     ## @var isUpdateScheduled
     # Boolean variable to track if some update is already scheduled.
 
-    ## @var bufferLock
-    # Mutual exclusion for measurement buffer.
-
     ## @var scheduleLock
     # Mutual exclusion for isUpdateScheduled flag.
 
@@ -367,31 +306,10 @@ class SynchronousUpdater(BaseUpdater):
         @param updateInterval
         """
         BaseUpdater.__init__(self, channel, updateInterval, updateBuffer)
-        #self.resetMeasurement()
         self.isUpdateScheduled = False
-        #self.bufferLock = threading.Semaphore(1)
         self.scheduleLock = threading.Semaphore(1)
         # TODO: Check race conditions with this set.
         self.executors = set()
-
-    #def handleAvailableData(self, measurement):
-    #    """!
-    #    @copydoc BaseUpdater::handleAvailableData()
-    #    """
-    #    self.scheduleLock.acquire()
-    #    try:
-    #        if not self.isUpdateScheduled:
-    #            if self.isUpdateRunning:
-    #                # New data is available but update is still running.
-    #                # Store data in buffer and schedule new update after current update is done.
-    #                self.updateMeasurement(measurement)
-    #            else:
-    #                self.runUpdate(measurement)
-    #        else:
-    #            # Update job is already scheduled. Just update buffer.
-    #            self.updateMeasurement(measurement)
-    #    finally:
-    #        self.scheduleLock.release()
 
     def dataComplete(self):
         self.scheduleLock.acquire()
@@ -409,22 +327,12 @@ class SynchronousUpdater(BaseUpdater):
         """!
         @copydoc BaseUpdater::resolveUpdateResult()
         """
-        # An update hust finished. Wait for configured time and run new update.
+        # An update just finished. Wait for configured time and run new update.
         self.scheduleLock.acquire()
         try:
             self.scheduleUpdateJob()
         finally:
             self.scheduleLock.release()
-
-    #def updateMeasurement(self, measurement):
-    #    """
-    #    Update buffered measurement.
-    #    """
-    #    self.bufferLock.acquire()
-    #    try:
-    #        self.storeUpdateData(measurement)
-    #    finally:
-    #        self.bufferLock.release()
 
     def scheduleUpdateJob(self):
         """
@@ -446,27 +354,9 @@ class SynchronousUpdater(BaseUpdater):
             self.executors.discard(executor)
             self.isUpdateScheduled = False
             if self.updateBuffer.isComplete():
-                #data = self.pullMeasurement()
                 self.runUpdateLocked()
         finally:
             self.scheduleLock.release()
-
-    #def pullMeasurement(self):
-    #    """!
-    #    Atomically get buferred measurement and clear buffer.
-    #
-    #    @return Measurement.
-    #    """
-    #    d = None
-    #    self.bufferLock.acquire()
-    #    try:
-    #        #d = self.getMeasurement()
-    #        d = self.updateBuffer.getMeasurement()
-    #        #self.resetMeasurement()
-    #        self.updateBuffer.reset()
-    #    finally:
-    #        self.bufferLock.release()
-    #    return d
 
     def stop(self):
         """!
@@ -476,40 +366,11 @@ class SynchronousUpdater(BaseUpdater):
             executor.stop()
         self.executors = set()
 
-    #def resetMeasurement(self):
-    #    """!
-    #    Clear internal buffer with measurements. Override this mehod in sub-class.
-    #    """
-    #    raise NotImplementedError("Override this mehod in sub-class")
-
-    #def storeUpdateData(self, measurement):
-    #    """!
-    #    Save new measurement. Override this mehod in sub-class.
-    #
-    #    @param measurement
-    #    """
-    #    raise NotImplementedError("Override this mehod in sub-class")
-
-    #def isDataBuffered(self):
-    #    """!
-    #    Check if there are some stored measurements. Override this mehod in sub-class.
-    #    """
-    #    raise NotImplementedError("Override this mehod in sub-class")
-
-    #def getMeasurement(self):
-    #    """!
-    #    Get stored measurement. Override this mehod in sub-class.
-    #    """
-    #    raise NotImplementedError("Override this mehod in sub-class")
-
 class BufferedUpdater(SynchronousUpdater):
     """!
     Implement some timer to send update is time elapses. Don't wait for incoming data
     after time expires.
     """
-
-    ## @var measurement
-    # Stored measurement.
 
     def __init__(self, channel, updateMapping, updateInterval):
         SynchronousUpdater.__init__(
@@ -518,38 +379,11 @@ class BufferedUpdater(SynchronousUpdater):
             updateInterval,
             LastValueUpdateBuffer(updateMapping.keys()))
 
-    #def resetMeasurement(self):
-    #    """!
-    #    @copydoc SynchronousUpdater::resetMeasurement()
-    #    """
-    #    self.measurement = None
-
-    #def storeUpdateData(self, measurement):
-    #    """!
-    #    @copydoc SynchronousUpdater::storeUpdateData()
-    #    """
-    #    self.measurement = measurement
-
-    #def isDataBuffered(self):
-    #    """
-    #    @copydoc SynchronousUpdater::isDataBuffered()
-    #    """
-    #    return self.measurement is not None
-
-    #def getMeasurement(self):
-    #    """!
-    #    @copydoc SynchronousUpdater::getMeasurement()
-    #    """
-    #    return self.measurement
-
 class AverageUpdater(SynchronousUpdater):
     """!
     Like BufferedUpdater but keep track all data which wasn't send and calculate
     average value while sending them.
     """
-
-    ## @var intervalMeasurements
-    # Stored measurements to compute average values.
 
     def __init__(self, channel, updateMapping, updateInterval):
         SynchronousUpdater.__init__(
@@ -558,90 +392,17 @@ class AverageUpdater(SynchronousUpdater):
             updateInterval,
             AverageUpdateBuffer(updateMapping.keys()))
 
-    #def storeUpdateData(self, measurement):
-    #    """!
-    #    @copydoc SynchronousUpdater::storeUpdateData()
-    #    """
-    #    if self.isAllMeasurementValuesValid(measurement):
-    #        self.intervalMeasurements.append(measurement)
-    #    else:
-    #        logging.getLogger().info("Can't convert all measured values to numbers: {}".format(measurement))
-
-    #def resetMeasurement(self):
-    #    """!
-    #    @copydoc SynchronousUpdater::resetMeasurement()
-    #    """
-    #    self.intervalMeasurements = []
-
-    #def isDataBuffered(self):
-    #    """!
-    #    @copydoc SynchronousUpdater::isDataBuffered()
-    #    """
-    #    return len(self.intervalMeasurements) > 0
-
-    #def getMeasurement(self):
-    #    """!
-    #    @copydoc SynchronousUpdater::getMeasurement()
-    #    """
-    #    return self.createAverageMeasurement()
-
-    #def createAverageMeasurement(self):
-    #    """!
-    #    Create measurement from collected data during update interval period.
-    #    """
-    #    averageData = {}
-    #    for measurement in self.intervalMeasurements:
-    #        for dataIdentifier, value in measurement.fields.items():
-    #            if dataIdentifier not in averageData:
-    #                averageData[dataIdentifier] = 0
-    #            averageData[dataIdentifier] += float(value)
-    #    for dataIdentifier, value in averageData.items():
-    #        averageData[dataIdentifier] = averageData[dataIdentifier] / float(len(self.intervalMeasurements))
-    #    lastTime = self.intervalMeasurements[-1]
-    #    return Measurement(averageData, lastTime)
-
-    #def isAllMeasurementValuesValid(self, measurement):
-    #    """!
-    #    Check if all measurement data can be converted to floating point numbers.
-    #
-    #    @param measurement Measurement object.
-    #    """
-    #    for dataIdentifier, value in measurement.fields.items():
-    #        try:
-    #            float(value)
-    #        except ValueError as ex:
-    #            return False
-    #    return True
-
 class OnChangeUpdater(BaseUpdater):
     """!
     Send every value change.
     """
 
-    ## @var changeBuffer
-    # Store data which needs to be send.
-
-    def __init__(self, channel):
-        """!
-        Initiate OnChangeUpdater object.
-
-        @param channel
-        """
-        BaseUpdater.__init__(self, channel)
-        self.changeBuffer = []
-        raise NotImplementedError("Not implemented yet")
-
-    #def handleAvailableData(self, measurement):
-    #    """!
-    #    @copydoc BaseUpdater::handleAvailableData()
-    #    """
-    #    raise NotImplementedError("Not implemented yet")
-
-    def resolveUpdateResult(self, result):
-        """!
-        @copydoc BaseUpdater::resolveUpdateResult()
-        """
-        raise NotImplementedError("Not implemented yet")
+    def __init__(self, channel, updateMapping, updateInterval):
+        BaseUpdater.__init__(
+            self,
+            channel,
+            updateInterval,
+            ChangeValueBuffer(updateMapping.keys()))
 
 class SchedulerExecutor:
     """!
