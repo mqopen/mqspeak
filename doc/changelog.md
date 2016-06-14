@@ -11,13 +11,10 @@
  - Supported receiving data from multiple brokers.
  - Configured with .ini style config file.
 
-## v0.1.1
+## v0.2.0
 
  - Mutexes are always released in finally block. Avoiding possible deadlocks.
  - Changed setup.py long description to content of README.md file.
-
-## v0.2.0
-
  - Added channel waiting mechanism.
  - Logging to syslog.
  - Added `-o` option which instruct mqspek to log to stdout instead to syslog.
