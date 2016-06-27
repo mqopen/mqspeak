@@ -16,7 +16,6 @@
 import sys
 import logging
 import logging.handlers
-#from mqspeak.collecting import UpdateBuffer
 from mqspeak.config import ProgramConfig, ConfigException
 from mqspeak.data import MeasurementParamConverter
 from mqspeak import args
@@ -40,7 +39,7 @@ class System:
         cls.cliArgs = args.parse_args()
 
         # Logging destination.
-        if cls.cliArgs.o:
+        if cls.cliArgs.log_stdout:
             h = logging.StreamHandler(stream = sys.stdout)
 
         # Verbose.

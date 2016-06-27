@@ -18,151 +18,6 @@ import collections
 from mqreceive.data import DataIdentifier
 from mqspeak.data import Measurement
 
-#class DataCollector:
-#    """!
-#    Object for collecting received data from MQTT brokers. This object is also resposible
-#    to provide received data to each update buffer. If some of update buffers becomes full,
-#    its content is given to ChannelUpdateSupervisor object.
-#    """
-#
-#    ## @var updateBuffers
-#    # List of UpdateBuffer objects.
-#
-#    ## @var channelUpdateSupervisor
-#    # UpdateSupervisor object.
-#
-#    def __init__(self, updateBuffers, channelUpdateSupervisor):
-#        """!
-#        Initiate DataCollector object.
-#
-#        @param updateBuffers List of UpdateBuffer objects.
-#        @param channelUpdateSupervisor UpdateSupervisor object.
-#        """
-#        self.updateBuffers = updateBuffers
-#        self.channelUpdateSupervisor = channelUpdateSupervisor
-#
-#    def onMessage(self, broker, topic, data):
-#        self.onNewData(DataIdentifier(broker, topic), data);
-#
-#    def onNewData(self, dataIdentifier, data):
-#        """!
-#        Notify data collector when new data is available.
-#
-#        @param dataIdentifier Data identification.
-#        @param data Payload.
-#        """
-#        for updateBuffer in self.updateBuffers:
-#            self.tryBuffer(updateBuffer, dataIdentifier, data)
-#
-#    def tryBuffer(self, updateBuffer, dataIdentifier, data):
-#        """!
-#        Try to update buffer.
-#
-#        @param updateBuffer Buffer to update.
-#        @param dataIdentifier Data identification.
-#        @param data Payload.
-#        """
-#        try:
-#            if updateBuffer.isUpdateRelevant(dataIdentifier):
-#                updateBuffer.updateReceivedData(dataIdentifier, data)
-#                if updateBuffer.isComplete():
-#                    d = updateBuffer.getData()
-#                    updateBuffer.reset()
-#                    measurement = Measurement.currentMeasurement(d)
-#                    self.channelUpdateSupervisor.dataAvailable(updateBuffer.channel, measurement)
-#                else:
-#                    # Notify update supervisor about arrived data.
-#                    self.channelUpdateSupervisor.dataAvailable(updateBuffer)
-#        except TopicException as ex:
-#            logging.getLogger().info("Topic exception: {}".format(ex))
-
-#class _UpdateBuffer:
-#    """!
-#    Class for buffering required data set before sending them out.
-#    """
-#
-#    ## @var channel
-#    # Updated channel object.
-#
-#    ## @var dataIdentifiers
-#    # Iterable of DataIdentifier objects.
-#
-#    ## @var dataMapping
-#    # The {DataIdentifier: value} mapping.
-#
-#    def __init__(self, channel, dataIdentifiers):
-#        """!
-#        Initiate UpdateBuffer object.
-#
-#        @param channel Channel identification object.
-#        @param dataIdentifiers Iterable of DataIdentifier objects.
-#        """
-#        self.channel = channel
-#        self.dataIdentifiers = dataIdentifiers
-#        self.reset()
-#
-#    def isComplete(self):
-#        """!
-#        Check if all required data are buffered.
-#
-#        @return True if all required data are buffered, False otherwise.
-#        """
-#        return not any(x is None for x in self.dataMapping.values())
-#
-#    def isUpdateRelevant(self, dataIdentifier):
-#        """!
-#        Check if update is relevant to this channel.
-#
-#        @param dataIdentifier Update data identifier.
-#        @return True if update is relevant, False otherwise
-#        """
-#        return dataIdentifier in self.dataMapping
-#
-#    def updateReceivedData(self, dataIdentifier, value):
-#        """!
-#        Update received data.
-#
-#        @param dataIdentifier Data identification.
-#        @param value Data content.
-#        @throws TopicException If unwanted topic is updated.
-#        """
-#        if not self.isUpdateRelevant(dataIdentifier):
-#            raise TopicException("Illegal topic update: {}".format(dataIdentifier))
-#        else:
-#            self.dataMapping[dataIdentifier] = value
-#
-#    def getData(self):
-#        """!
-#        Get dictionary with buffered data.
-#
-#        @return Buffered data.
-#        """
-#        return self.dataMapping
-#
-#    def reset(self):
-#        """!
-#        Clear buffered data.
-#        """
-#        self.dataMapping = {}
-#        for dataIdentifier in self.dataIdentifiers:
-#            self.dataMapping[dataIdentifier] = None
-#
-#    def __str__(self):
-#        """!
-#        Convert UpdateBuffer object to string.
-#
-#        @return String.
-#        """
-#        return "UpdateBuffer({}: {})".format(self.channel, self.dataIdentifiers)
-#
-#    def __repr__(self):
-#        """!
-#        Convert UpdateBuffer object to representation string.
-#
-#        @return Representation string.
-#        """
-#        return "<{}>".format(self.__str__())
-
 class BaseUpdateBuffer:
     """!
     Class for buffering required data set before sending them out.
@@ -171,9 +26,6 @@ class BaseUpdateBuffer:
     ## @var dataIdentifiers
     # Iterable of DataIdentifier objects.
 
-    ## @var dataMapping
-    # The {DataIdentifier: value} mapping.
-
     def __init__(self, dataIdentifiers):
         """!
         Initiate UpdateBuffer object.
@@ -181,7 +33,7 @@ class BaseUpdateBuffer:
         @param dataIdentifiers Iterable of DataIdentifier objects.
         """
         self.dataIdentifiers = dataIdentifiers
-        self.reset()
+        #self.reset()
 
     def isComplete(self):
         """!
@@ -189,7 +41,8 @@ class BaseUpdateBuffer:
 
         @return True if all required data are buffered, False otherwise.
         """
-        return not any(x is None for x in self.dataMapping.values())
+        raise NotImplementedError("Override this mehod in sub-class")
+        #return not any(x is None for x in self.dataMapping.values())
 
     def isUpdateRelevant(self, dataIdentifier):
         """!
@@ -198,7 +51,7 @@ class BaseUpdateBuffer:
         @param dataIdentifier Update data identifier.
         @return True if update is relevant, False otherwise
         """
-        return dataIdentifier in self.dataMapping
+        return dataIdentifier in self.dataIdentifiers
 
     def updateReceivedData(self, dataIdentifier, value):
         """!
@@ -212,7 +65,7 @@ class BaseUpdateBuffer:
             raise TopicException("Illegal topic update: {}".format(dataIdentifier))
         else:
             self.handleUpdateReceivedData(dataIdentifier, value)
-            self.hasData = True
+        #    self.hasData = True
 
     def handleUpdateReceivedData(self, dataIdentifier, value):
         """!
@@ -238,15 +91,17 @@ class BaseUpdateBuffer:
 
         @return Measureent object.
         """
-        return Measurement.currentMeasurement(self.getData())
+        raise NotImplementedError("Override this mehod in sub-class")
+        #return Measurement.currentMeasurement(self.getData())
 
     def getMissingDataIdentifiers(self):
         """!
         Get iterable of data identifiers which doesn't have stored data.
         """
-        for dataIdentifier, value in self.dataMapping.items():
-            if value is None:
-                yield dataIdentifier
+        raise NotImplementedError("Override this mehod in sub-class")
+        #for dataIdentifier, value in self.dataMapping.items():
+        #    if value is None:
+        #        yield dataIdentifier
 
     def hasAnyData(self):
         """!
@@ -254,16 +109,18 @@ class BaseUpdateBuffer:
 
         @return True if there are stored any data, False otherwise.
         """
-        return self.hasData
+        raise NotImplementedError("Override this mehod in sub-class")
+        #return self.hasData
 
     def reset(self):
         """!
         Clear buffered data.
         """
-        self.dataMapping = {}
-        for dataIdentifier in self.dataIdentifiers:
-            self.dataMapping[dataIdentifier] = None
-        self.hasData = False
+        raise NotImplementedError("Override this mehod in sub-class")
+        #self.dataMapping = {}
+        #for dataIdentifier in self.dataIdentifiers:
+        #    self.dataMapping[dataIdentifier] = None
+        #self.hasData = False
 
     def __str__(self):
         """!
@@ -271,7 +128,7 @@ class BaseUpdateBuffer:
 
         @return String.
         """
-        return "{}({})".format(self.__class__.__name__, self.dataMapping)
+        return "{}({})".format(self.__class__.__name__, self.dataIdentifiers)
 
     def __repr__(self):
         """!
@@ -281,7 +138,45 @@ class BaseUpdateBuffer:
         """
         return "<{}>".format(self.__str__())
 
-class LastValueUpdateBuffer(BaseUpdateBuffer):
+class SingleValueUpdateBuffer(BaseUpdateBuffer):
+    """!
+    Base class for update buffers which are update over time and they store a
+    single value.
+    """
+
+    ## @var dataMapping
+    # The {DataIdentifier: value} mapping.
+
+    ## @var hasData
+    # Boolean inicated that buffer stores any data. Private.
+
+    def __init__(self, dataIdentifiers):
+        BaseUpdateBuffer.__init__(self, dataIdentifiers)
+        self.dataMapping = {}
+        for dataIdentifier in dataIdentifiers:
+            self.dataMapping[dataIdentifier] = None
+        self.hasData = False
+
+    def isComplete(self):
+        return not any(x is None for x in self.dataMapping.values())
+
+    def getMeasurement(self):
+        return Measurement.currentMeasurement(self.getData())
+
+    def getMissingDataIdentifiers(self):
+        for dataIdentifier, value in self.dataMapping.items():
+            if value is None:
+                yield dataIdentifier
+
+    def hasAnyData(self):
+        return self.hasData
+
+    def reset(self):
+        for dataIdentifier in self.dataMapping:
+            self.dataMapping[dataIdentifier] = None
+        self.hasData = False
+
+class LastValueUpdateBuffer(SingleValueUpdateBuffer):
     """!
     Keeps only last value. When some value is updated, the preveous value is lost.
 
@@ -294,7 +189,7 @@ class LastValueUpdateBuffer(BaseUpdateBuffer):
     def getData(self):
         return self.dataMapping
 
-class AverageUpdateBuffer(BaseUpdateBuffer):
+class AverageUpdateBuffer(SingleValueUpdateBuffer):
     """!
     Calculate arithmetic average value. Each new value is stored in internal buffer.
     getData() method returns data mapping with calculated average value.
@@ -322,36 +217,35 @@ class ChangeValueBuffer(BaseUpdateBuffer):
     """!
     Store all change updates.
     """
-    def handleUpdateReceivedData(self, dataIdentifier, value):
-        if self.dataMapping[dataIdentifier] is None:
-            self.dataMapping[dataIdentifier] = collections.deque()
-        if not (len(self.dataMapping[dataIdentifier]) > 0 and self.dataMapping[dataIdentifier][-1] == value):
-            self.dataMapping[dataIdentifier].append(value)
 
-    def getData(self):
-        mapping = {}
-        for dataIdentifier, valueList in self.dataMapping.items():
-            if valueList is not None and len(valueList) > 0:
-                mapping[dataIdentifier] = valueList[0]
-            else:
-                mapping[dataIdentifier] = None
-        print(mapping)
-        return mapping
+    def __init__(self, dataIdentifiers):
+        BaseUpdateBuffer.__init__(self, dataIdentifiers)
+        self.lastValueMapping = {}
+        for dataIdentifier in dataIdentifiers:
+            self.lastValueMapping[dataIdentifier] = None
+        self.measurementBuffer = collections.deque()
+
+    def handleUpdateReceivedData(self, dataIdentifier, value):
+        if self.lastValueMapping[dataIdentifier] is None or self.lastValueMapping[dataIdentifier] != value:
+            self.lastValueMapping[dataIdentifier] = value
+            measurement = Measurement.currentMeasurement({dataIdentifier: value})
+            self.measurementBuffer.append(measurement)
+        else:
+            logging.getLogger().error(
+                "New data are equals to previous one ({}: {}). Skipping...".format(dataIdentifier, repr(value)))
 
     def reset(self):
-        """!
-        Reset will not delete all data.
-        """
-        if not hasattr(self, "dataMapping"):
-            BaseUpdateBuffer.reset(self)
-            return
-        hasData = False
-        for valueList in self.dataMapping.values():
-            if valueList is not None and len(valueList) > 0:
-                valueList.popleft()
-                if not hasData and len(valueList) > 0:
-                    hasData = True
-        self.hasData = hasData
+        self.measurementBuffer.popleft()
+
+    def getMeasurement(self):
+        print(self.measurementBuffer[0])
+        return self.measurementBuffer[0]
+
+    def hasAnyData(self):
+        return len(self.measurementBuffer) > 0
+
+    def isComplete(self):
+        return self.hasAnyData()
 
 class TopicException(Exception):
     """!

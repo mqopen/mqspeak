@@ -199,6 +199,7 @@ class ThingSpeakSender(BaseSender):
         @copydoc BaseSender::fetch()
         """
         body = self.channelConvertMapping[channel].convert(measurement)
+        #body.update({'api_key': channel.apiKey, 'created_at': '2014-12-31 23:59:59'})
         body.update({'api_key': channel.apiKey})
         bodyEncoded = urllib.parse.urlencode(body)
         conn = http.client.HTTPSConnection("api.thingspeak.com", timeout = 30)
