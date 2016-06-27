@@ -33,7 +33,6 @@ class BaseUpdateBuffer:
         @param dataIdentifiers Iterable of DataIdentifier objects.
         """
         self.dataIdentifiers = dataIdentifiers
-        #self.reset()
 
     def isComplete(self):
         """!
@@ -42,7 +41,6 @@ class BaseUpdateBuffer:
         @return True if all required data are buffered, False otherwise.
         """
         raise NotImplementedError("Override this mehod in sub-class")
-        #return not any(x is None for x in self.dataMapping.values())
 
     def isUpdateRelevant(self, dataIdentifier):
         """!
@@ -65,7 +63,6 @@ class BaseUpdateBuffer:
             raise TopicException("Illegal topic update: {}".format(dataIdentifier))
         else:
             self.handleUpdateReceivedData(dataIdentifier, value)
-        #    self.hasData = True
 
     def handleUpdateReceivedData(self, dataIdentifier, value):
         """!
@@ -92,16 +89,12 @@ class BaseUpdateBuffer:
         @return Measureent object.
         """
         raise NotImplementedError("Override this mehod in sub-class")
-        #return Measurement.currentMeasurement(self.getData())
 
     def getMissingDataIdentifiers(self):
         """!
         Get iterable of data identifiers which doesn't have stored data.
         """
         raise NotImplementedError("Override this mehod in sub-class")
-        #for dataIdentifier, value in self.dataMapping.items():
-        #    if value is None:
-        #        yield dataIdentifier
 
     def hasAnyData(self):
         """!
@@ -117,10 +110,6 @@ class BaseUpdateBuffer:
         Clear buffered data.
         """
         raise NotImplementedError("Override this mehod in sub-class")
-        #self.dataMapping = {}
-        #for dataIdentifier in self.dataIdentifiers:
-        #    self.dataMapping[dataIdentifier] = None
-        #self.hasData = False
 
     def __str__(self):
         """!
@@ -224,6 +213,10 @@ class ChangeValueBuffer(BaseUpdateBuffer):
         for dataIdentifier in dataIdentifiers:
             self.lastValueMapping[dataIdentifier] = None
         self.measurementBuffer = collections.deque()
+
+    def updateReceivedData(self, dataIdentifier, value):
+        BaseUpdater.updateReceivedData(self, dataIdentifier, value)
+        self.hasData = True
 
     def handleUpdateReceivedData(self, dataIdentifier, value):
         if self.lastValueMapping[dataIdentifier] is None or self.lastValueMapping[dataIdentifier] != value:
