@@ -17,7 +17,7 @@
  - Changed setup.py long description to content of README.md file.
  - Added channel waiting mechanism.
  - Logging to syslog.
- - Added `-o` option which instruct mqspek to log to stdout instead to syslog.
+ - Added `-o` option which instruct mqspeak to log to stdout instead to syslog.
  - Average updater now calculates a average value from all MQTT topic updates.
     Not only from complete measurement.
  - Implemented `onchange` updater.
