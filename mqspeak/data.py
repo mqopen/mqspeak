@@ -43,7 +43,7 @@ class Measurement:
 
         @param fields Maping {dataIdentifier: vaue}.
         """
-        return cls(fields, datetime.datetime.now())
+        return cls(fields, datetime.datetime.utcnow())
 
     def __str__(self):
         """!
@@ -106,7 +106,7 @@ class MeasurementParamConverter:
 
         @return String.
         """
-        return "<Param Converter: {}>".format(str(self.dataFieldsMapping))
+        return "Param Converter: {}".format(str(self.dataFieldsMapping))
 
     def __repr__(self):
         """!
@@ -114,7 +114,7 @@ class MeasurementParamConverter:
 
         @return representation string.
         """
-        return self.__str__()
+        return "<{}>".format(self.__str__())
 
 class ConvertException(Exception):
     """!
