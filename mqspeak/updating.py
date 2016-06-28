@@ -80,11 +80,20 @@ class ChannnelUpdateSupervisor(DataCollector):
 
         for updater in self.channelUpdaterMapping.values():
             if updater.isUpdateRelevant(dataIdentifier):
-                updater.updateReceivedData(dataIdentifier, data)
+
+                # Notify updater in separate thread for case that updater will
+                # block for some reason.
+                threading.Thread(
+                    target = updater.updateReceivedData,
+                    args = (dataIdentifier, data)).start()
 
 class BaseUpdater:
     """!
     Updater base class.
+
+    Before use of any instance of this class, call setDispatcher() method to
+    assign a update disatcher. Update dispather is object which runs an update
+    in its separate thread and notifies back an updater, when update finishes.
     """
 
     ## @var channel
@@ -100,7 +109,8 @@ class BaseUpdater:
     # Last update time.
 
     ## @var waitingStarted
-    # Timestamp of started waiting.
+    # Timestamp of started waiting (when updater has some data and is in
+    # waiting state) or None if updater doesn't wait for any remaning data.
 
     ## @var updateLock
     # Mutual exclusion to running updates.
@@ -180,13 +190,17 @@ class BaseUpdater:
                 if self.updateBuffer.isComplete():
                     self.dataComplete()
                 else:
-                    if self.isUpdateIntervalExpired() and self.waitingStarted is None:
+                    if self.isUpdateIntervalExpired() and \
+                            self.channel.hasWaiting() and \
+                            self.waitingStarted is None:
                         self.waitingStarted = datetime.datetime.now()
         finally:
             self.updateLock.release()
 
     def notifyUpdateWaiting(self):
         """!
+        Call this method periodically to chech if waiting interval has been
+        exceeded.
         """
         if self.channel.hasWaiting():
             self.updateLock.acquire()
@@ -200,15 +214,16 @@ class BaseUpdater:
                                     ", ".join(str(x) for x in self.updateBuffer.getMissingDataIdentifiers())))
                             self.runUpdate()
                             self.updateBuffer.reset()
-                    elif self.isUpdateIntervalExpired() :
-                        # Update interval just expires.
+                    elif self.updateBuffer.hasAnyData() and self.isUpdateIntervalExpired():
+                        # Update buffer store some data. Start waiting for a case that no
+                        # more data will be received in the future.
                         self.waitingStarted = datetime.datetime.now()
             finally:
                 self.updateLock.release()
 
     def dataComplete(self):
         """!
-        Notify that all data needed for update is complete. Override this mehod in sub-class.
+        Notify that all data needed for update is complete.
         """
         raise NotImplementedError("Override this mehod in sub-class")
 
@@ -254,7 +269,7 @@ class BaseUpdater:
 
     def resolveUpdateResult(self, result):
         """!
-        Resolve update result in updater. Override this mehod in sub-class.
+        Resolve update result in updater.
 
         @param result UpdateResult object.
         """
@@ -262,16 +277,16 @@ class BaseUpdater:
 
 class BlackoutUpdater(BaseUpdater):
     """!
-    Ignore any incomming data during blackkout period. Send first data after this
-    period expires.
+    Ignore any incomming data during blackout period. Send first data which arriver
+    after blackout period expires.
     """
 
     def __init__(self, channel, updateMapping, updateInterval):
-        BaseUpdate.__init__(
+        BaseUpdater.__init__(
             self,
             channel,
             updateInterval,
-            LastValueUpdateBuffer(updateBuffer.keys()))
+            LastValueUpdateBuffer(updateMapping.keys()))
 
     def dataComplete(self):
         if self.isUpdateIntervalExpired() and not self.isUpdateRunning:

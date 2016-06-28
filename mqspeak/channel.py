@@ -85,7 +85,7 @@ class Channel:
 
     def hasWaiting(self):
         """!
-        Check if channel has wainting enabled.
+        Check if channel has waiting enabled.
 
         @return True if waiting is enabled, False otherwise.
         """

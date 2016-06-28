@@ -145,10 +145,12 @@ class BaseSender:
         @param measurement
         """
         try:
-            logging.getLogger().info("Sending data to channel {}...".format(channel))
+            logging.getLogger().info(
+                "Sending data to channel {}...".format(channel))
             status, reason, responseBytes = self.fetch(channel, measurement)
             response = self.decodeResponseData(responseBytes)
-            logging.getLogger().info("Channel {} response: {} {}: {}".format(channel, status, reason, response))
+            logging.getLogger().info(
+                "Channel {} response: {} {}: {}".format(channel, status, reason, response))
             result = (status, reason, response)
             success = self.checkSendResult(result)
             return UpdateResult(success)
@@ -199,7 +201,7 @@ class ThingSpeakSender(BaseSender):
         @copydoc BaseSender::fetch()
         """
         body = self.channelConvertMapping[channel].convert(measurement)
-        #body.update({'api_key': channel.apiKey, 'created_at': '2014-12-31 23:59:59'})
+        body.update({'created_at': measurement.time.isoformat(sep = ' ')})
         body.update({'api_key': channel.apiKey})
         bodyEncoded = urllib.parse.urlencode(body)
         conn = http.client.HTTPSConnection("api.thingspeak.com", timeout = 30)
