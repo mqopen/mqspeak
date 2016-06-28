@@ -15,6 +15,7 @@
 
 import logging
 import collections
+import copy
 from mqreceive.data import DataIdentifier
 from mqspeak.data import Measurement
 
@@ -177,7 +178,7 @@ class LastValueUpdateBuffer(SingleValueUpdateBuffer):
         self.dataMapping[dataIdentifier] = value
 
     def getData(self):
-        return self.dataMapping
+        return copy.deepcopy(self.dataMapping)
 
 class AverageUpdateBuffer(SingleValueUpdateBuffer):
     """!

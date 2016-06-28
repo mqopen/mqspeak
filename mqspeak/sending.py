@@ -101,8 +101,9 @@ class ChannelUpdateDispatcher:
         """!
         Stop dispatcher thread.
         """
-        self.running = False
-        self.dispatchLock.release()
+        if self.running:
+            self.running = False
+            self.dispatchLock.release()
 
     def dispatch(self, channel, measurement, updater):
         """!
@@ -137,16 +138,16 @@ class BaseSender:
         """
         self.channelConvertMapping = channelConvertMapping
 
-    def send(self, channel,  measurement):
+    def send(self, channel, measurement):
         """!
         Send measurement.
 
-        @param channel
-        @param measurement
+        @param channel Updated channel object.
+        @param measurement Measured data.
         """
         try:
             logging.getLogger().info(
-                "Sending data to channel {}...".format(channel))
+                "Sending data to channel {}: {}...".format(channel, measurement))
             status, reason, responseBytes = self.fetch(channel, measurement)
             response = self.decodeResponseData(responseBytes)
             logging.getLogger().info(
