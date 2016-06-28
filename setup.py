@@ -28,7 +28,7 @@ setup(
     author = mqspeak.__author__,
     author_email = mqspeak.__email__,
     description = "MQTT bridge",
-    long_description = open("README.md").read(),
+    long_description = open("readme.md").read(),
     license = "GPLv3",
     classifiers = [
         'Development Status :: 3 - Alpha',
