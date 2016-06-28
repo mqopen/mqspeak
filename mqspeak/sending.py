@@ -145,6 +145,7 @@ class BaseSender:
         @param channel Updated channel object.
         @param measurement Measured data.
         """
+        success = False
         try:
             logging.getLogger().info(
                 "Sending data to channel {}: {}...".format(channel, measurement))
@@ -154,10 +155,10 @@ class BaseSender:
                 "Channel {} response: {} {}: {}".format(channel, status, reason, response))
             result = (status, reason, response)
             success = self.checkSendResult(result)
-            return UpdateResult(success)
         except BaseException as ex:
             logging.getLogger().info("Send exception: {}".format(ex))
-            return UpdateResult(False)
+        finally:
+            return UpdateResult(success)
 
     def decodeResponseData(self, responseBytes):
         """!
@@ -170,9 +171,10 @@ class BaseSender:
         try:
             data = responseBytes.decode("utf-8").strip()
         except UnicodeError as ex:
-            logging.getLogger().info("Can't decode response data: {}".format(responseBytes))
+            logging.getLogger().error("Can't decode response data: {}".format(responseBytes))
             data = "<Decode error>"
-        return data
+        finally:
+            return data
 
     def fetch(self, channel, measurement):
         """!
