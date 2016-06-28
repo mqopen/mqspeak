@@ -222,15 +222,15 @@ class ThingSpeakSender(BaseSender):
         """
         status, reason, data = result
         if status != 200:
-            logging.getLogger().info("Response status error: {} {} - {}.".format(status, reason, data))
+            logging.getLogger().error("Response status error: {} {} - {}.".format(status, reason, data))
             return False
         try:
             entries = int(data)
             if entries == 0:
-                logging.getLogger().info("Data send error: ThingSpeak responded with return code 0.")
+                logging.getLogger().error("Data send error: ThingSpeak responded with return code 0.")
                 return False
         except ValueError as ex:
-            logging.getLogger().info("Data send error: ThingSpeak responded with unexpected response: {}".format(repr(data)))
+            logging.getLogger().error("Data send error: ThingSpeak responded with unexpected response: {}".format(repr(data)))
             return False
         return True
 
@@ -262,7 +262,7 @@ class PhantSender(BaseSender):
         """
         (status, reason, data) = result
         if status != 200:
-            logging.getLogger().info("Response status error: {} {} - {}.".format(status, reason, data))
+            logging.getLogger().error("Response status error: {} {} - {}.".format(status, reason, data))
             return False
         return True
 
