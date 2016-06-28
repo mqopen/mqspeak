@@ -194,6 +194,8 @@ class BaseUpdater:
                             self.channel.hasWaiting() and \
                             self.waitingStarted is None:
                         self.waitingStarted = datetime.datetime.now()
+        except Exception as ex:
+            logging.getLogger().error("Channel <{}>: {}".format(self.channel, ex))
         finally:
             self.updateLock.release()
 

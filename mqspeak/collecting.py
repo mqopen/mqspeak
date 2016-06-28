@@ -193,7 +193,7 @@ class AverageUpdateBuffer(SingleValueUpdateBuffer):
                 self.dataMapping[dataIdentifier] = []
             self.dataMapping[dataIdentifier].append(value)
         except ValueError as ex:
-            logging.getLogger().info("Can't data convert to number: {}".format(value))
+            raise ValueError("Can't convert data to number: {}".format(value))
 
     def getData(self):
         mapping = {}
