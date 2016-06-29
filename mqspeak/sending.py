@@ -94,7 +94,7 @@ class ChannelUpdateDispatcher:
                 return
 
             # start send thread
-            (channel, measurement, resultNotify) = self.updateQueue.popleft()
+            channel, measurement, resultNotify = self.updateQueue.popleft()
             self.dispatch(channel, measurement, resultNotify)
 
     def stop(self):
@@ -178,7 +178,7 @@ class BaseSender:
 
     def fetch(self, channel, measurement):
         """!
-        Upload data to channel. Override this mehod in sub-class.
+        Upload data to channel.
 
         @param channel Channel identification object.
         @param measurement Uploaded data.
@@ -187,7 +187,7 @@ class BaseSender:
 
     def checkSendResult(self, result):
         """!
-        Check if data upload was succcessful. Override this mehod in sub-class.
+        Check if data upload was succcessful.
 
         @param result Tuple of (status, reason, response).
         """
