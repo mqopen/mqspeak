@@ -21,3 +21,7 @@
  - Average updater now calculates a average value from all MQTT topic updates.
     Not only from complete measurement.
  - Implemented `onchange` updater.
+
+## v0.2.0
+
+ - Fixed python package.
