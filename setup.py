@@ -19,6 +19,10 @@ from setuptools import setup, find_packages
 
 import mqspeak
 
+def readme():
+    with open('readme.md') as f:
+        return f.read()
+
 setup(
     name = "mqspeak",
     url = mqspeak.__project_url__,
@@ -28,7 +32,7 @@ setup(
     author = mqspeak.__author__,
     author_email = mqspeak.__email__,
     description = "MQTT bridge",
-    long_description = open("readme.md").read(),
+    long_description = readme(),
     license = "GPLv3",
     classifiers = [
         'Development Status :: 3 - Alpha',
