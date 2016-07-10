@@ -21,7 +21,7 @@ import mqspeak
 
 setup(
     name = "mqspeak",
-    url = 'https://github.com/buben19/mqspeak',
+    url = mqspeak.__project_url__,
     version = mqspeak.__version__,
     packages = find_packages(exclude = ['doc']),
     install_requires = ['mqreceive>=0.1.1'],
