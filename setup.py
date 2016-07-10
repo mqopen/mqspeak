@@ -24,7 +24,7 @@ setup(
     url = 'https://github.com/buben19/mqspeak',
     version = mqspeak.__version__,
     packages = find_packages(exclude = ['doc']),
-    install_requires = ['mqreceive>=0.1.0'],
+    install_requires = ['mqreceive>=0.1.1'],
     author = mqspeak.__author__,
     author_email = mqspeak.__email__,
     description = "MQTT bridge",
